@@ -72,8 +72,7 @@ void fixname2(char *name, size_t len)
 
 char * GetExtension(char * FileName)
 {
-    char * szTemp;
-    if((szTemp = strrchr(FileName, '.')) != NULL)
+    if (char* szTemp = strrchr(FileName, '.'))
         return szTemp;
     return NULL;
 }
