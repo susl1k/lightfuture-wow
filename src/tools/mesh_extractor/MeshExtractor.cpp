@@ -255,9 +255,9 @@ bool HandleArgs(int argc, char** argv, uint32& threads, std::set<uint32>& mapLis
             if (!param)
                 return false;
             std::string maps = std::string(param);
-            Tokenizer tokens(maps, ',');
+            Tokens tokens(maps, ',');
 
-            for (Tokenizer::const_iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
+            for (Tokens::iterator itr = tokens.begin(); itr != tokens.end(); ++itr)
                 mapList.insert(atoi(*itr));
 
             printf("Extracting only provided list of maps (%u).\n", uint32(mapList.size()));
