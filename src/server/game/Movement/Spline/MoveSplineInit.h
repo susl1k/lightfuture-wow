@@ -20,6 +20,7 @@
 #define TRINITYSERVER_MOVESPLINEINIT_H
 
 #include "MoveSplineInitArgs.h"
+#include "PathGenerator.h"
 
 class Unit;
 
@@ -43,7 +44,7 @@ namespace Movement
 
         /*  Final pass of initialization that launches spline movement.
          */
-        void Launch();
+        int32 Launch();
 
         /* Adds movement by parabolic trajectory
          * @param amplitude  - the maximum height of parabola, value could be negative and positive
@@ -70,10 +71,10 @@ namespace Movement
          */
         void MovebyPath(const PointsArray& path, int32 pointId = 0);
 
-        /* Initializes simple A to B mition, A is current unit's position, B is destination
+        /* Initializes simple A to B motion, A is current unit's position, B is destination
          */
-        void MoveTo(const Vector3& destination);
-        void MoveTo(float x, float y, float z);
+        void MoveTo(const Vector3& destination, bool generatePath = true, bool forceDestination = false);
+        void MoveTo(float x, float y, float z, bool generatePath = true, bool forceDestination = false);
 
         /* Sets Id of fisrt point of the path. When N-th path point will be done ILisener will notify that pointId + N done
          * Needed for waypoint movement where path splitten into parts
@@ -133,14 +134,24 @@ namespace Movement
         args.path.assign(controls.begin(),controls.end());
     }
 
-    inline void MoveSplineInit::MoveTo(float x, float y, float z)
+    inline void MoveSplineInit::MoveTo(float x, float y, float z, bool generatePath, bool forceDestination)
     {
-        Vector3 v(x,y,z);
-        MoveTo(v);
+      MoveTo(G3D::Vector3(x, y, z), generatePath, forceDestination);
     }
 
-    inline void MoveSplineInit::MoveTo(const Vector3& dest)
+    inline void MoveSplineInit::MoveTo(Vector3& dest, bool generatePath, bool forceDestination)
     {
+        if (generatePath)
+        {
+            PathGenerator path(&unit);
+            bool result = path.CalculatePath(dest.x, dest.y, dest.z, forceDestination);
+            if (result && path.GetPathType() & ~PATHFIND_NOPATH)
+            {
+                MovebyPath(path.GetPath());
+                return;
+            }
+        }
+
         args.path_Idx_offset = 0;
         args.path.resize(2);
         args.path[1] = dest;

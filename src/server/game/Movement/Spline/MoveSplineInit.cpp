@@ -54,7 +54,7 @@ namespace Movement
         return MOVE_RUN;
     }
 
-    void MoveSplineInit::Launch()
+    int32 MoveSplineInit::Launch()
     {
         MoveSpline& move_spline = *unit.movespline;
 
@@ -86,7 +86,7 @@ namespace Movement
             args.velocity = unit.GetSpeed(SelectSpeedType(moveFlags));
 
         if (!args.Validate())
-            return;
+            return 0;
 
         if (moveFlags & MOVEMENTFLAG_ROOT)
             moveFlags &= ~MOVEMENTFLAG_MASK_MOVING;
