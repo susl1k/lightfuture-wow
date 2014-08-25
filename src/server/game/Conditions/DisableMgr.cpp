@@ -224,23 +224,23 @@ void LoadDisables()
                 MapEntry const* mapEntry = sMapStore.LookupEntry(entry);
                 if (!mapEntry)
                 {
-                    sLog->outError(LOG_FILTER_SQL, "Map entry %u from `disables` doesn't exist in dbc, skipped.", entry);
+                    sLog->outError("Map entry %u from `disables` doesn't exist in dbc, skipped.", entry);
                     continue;
                 }
                 switch (mapEntry->map_type)
                 {
                     case MAP_COMMON:
-                        sLog->outInfo(LOG_FILTER_GENERAL, "Pathfinding disabled for world map %u.", entry);
+                        sLog->outString("Pathfinding disabled for world map %u.", entry);
                         break;
                     case MAP_INSTANCE:
                     case MAP_RAID:
-                        sLog->outInfo(LOG_FILTER_GENERAL, "Pathfinding disabled for instance map %u.", entry);
+                        sLog->outString("Pathfinding disabled for instance map %u.", entry);
                         break;
                     case MAP_BATTLEGROUND:
-                        sLog->outInfo(LOG_FILTER_GENERAL, "Pathfinding disabled for battleground map %u.", entry);
+                        sLog->outString("Pathfinding disabled for battleground map %u.", entry);
                         break;
                     case MAP_ARENA:
-                        sLog->outInfo(LOG_FILTER_GENERAL, "Pathfinding disabled for arena map %u.", entry);
+                        sLog->outString("Pathfinding disabled for arena map %u.", entry);
                         break;
                     default:
                         break;
