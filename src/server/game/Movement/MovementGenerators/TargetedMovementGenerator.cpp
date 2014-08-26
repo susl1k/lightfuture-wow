@@ -34,10 +34,10 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner, bool upd
     if (!i_target.isValid() || !i_target->IsInWorld())
         return;
 
-    if (owner->HasUnitState(UNIT_STATE_NOT_MOVE))
+    if (owner.HasUnitState(UNIT_STATE_NOT_MOVE))
         return;
 
-    if (owner->GetTypeId() == TYPEID_UNIT && !i_target->isInAccessiblePlaceFor(owner->ToCreature()))
+    if (owner.GetTypeId() == TYPEID_UNIT && !i_target->isInAccessiblePlaceFor(owner.ToCreature()))
         return;
 
     float x, y, z;
@@ -47,7 +47,7 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner, bool upd
         if (!i_offset)
         {
             // to nearest contact position
-            i_target->GetContactPoint(owner, x, y, z);
+            i_target->GetContactPoint(&owner, x, y, z);
         }
         else
         {
@@ -60,18 +60,18 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner, bool upd
             //  be (GetCombatReach() + i_offset) away.
             // Only applies when i_target is pet's owner otherwise pets and mobs end up
             //   doing a "dance" while fighting
-            if (owner->isPet() && i_target->GetTypeId() == TYPEID_PLAYER)
+            if (owner.isPet() && i_target->GetTypeId() == TYPEID_PLAYER)
             {
-                dist = i_target->GetCombatReach();
+				dist = i_target->GetCombatReach();
                 size = i_target->GetCombatReach() - i_target->GetObjectSize();
             }
             else
             {
                 dist = i_offset + 1.0f;
-                size = owner->GetObjectSize();
+                size = owner.GetObjectSize();
             }
 
-            if (i_target->IsWithinDistInMap(owner, dist))
+			if (i_target->IsWithinDistInMap(&owner, dist))
                 return;
 
             // to at i_offset distance from target and i_angle from target facing
@@ -88,11 +88,11 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner, bool upd
     }
 
     if (!i_path)
-        i_path = new PathGenerator(owner);
+        i_path = new PathGenerator(&owner);
 
     // allow pets to use shortcut if no path found when following their master
-    bool forceDest = (owner->GetTypeId() == TYPEID_UNIT && owner->ToCreature()->isPet()
-        && owner->HasUnitState(UNIT_STATE_FOLLOW));
+    bool forceDest = (owner.GetTypeId() == TYPEID_UNIT && owner.ToCreature()->isPet()
+        && owner.HasUnitState(UNIT_STATE_FOLLOW));
 
     bool result = i_path->CalculatePath(x, y, z, forceDest);
     if (!result || (i_path->GetPathType() & PATHFIND_NOPATH))
@@ -105,7 +105,7 @@ void TargetedMovementGeneratorMedium<T,D>::_setTargetLocation(T &owner, bool upd
     D::_addUnitStateMove(owner);
     i_targetReached = false;
     i_recalculateTravel = false;
-    owner->AddUnitState(UNIT_STATE_CHASE);
+    owner.AddUnitState(UNIT_STATE_CHASE);
 
     Movement::MoveSplineInit init(owner);
     init.MovebyPath(i_path->GetPath());
@@ -128,8 +128,8 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
     if (!i_target.isValid() || !i_target->IsInWorld())
         return false;
 
-    if (!owner || !owner.isAlive())
-        return false;
+    if (!owner.isAlive())
+        return true;
 		
     if (owner.HasUnitState(UNIT_STATE_NOT_MOVE))
     {
@@ -158,10 +158,10 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
     {
         i_recheckDistance.Reset(100);
         //More distance let have better performance, less distance let have more sensitive reaction at target move.
-        float allowed_dist = owner->GetCombatReach() + sWorld->getRate(RATE_TARGET_POS_RECALCULATION_RANGE);
-        G3D::Vector3 dest = owner->movespline->FinalDestination();
+        float allowed_dist = owner.GetCombatReach() + sWorld->getRate(RATE_TARGET_POS_RECALCULATION_RANGE);
+        G3D::Vector3 dest = owner.movespline->FinalDestination();
 
-        if (owner->GetTypeId() == TYPEID_UNIT && owner->ToCreature()->CanFly())
+        if (owner.GetTypeId() == TYPEID_UNIT && owner.ToCreature()->CanFly())
             targetMoved = !i_target->IsWithinDist3d(dest.x, dest.y, dest.z, allowed_dist);
         else
             targetMoved = !i_target->IsWithinDist2d(dest.x, dest.y, allowed_dist);
@@ -170,7 +170,7 @@ bool TargetedMovementGeneratorMedium<T,D>::Update(T &owner, const uint32 & time_
     if (i_recalculateTravel || targetMoved)
         _setTargetLocation(owner, targetMoved);
 
-    if (owner->movespline->Finalized())
+    if (owner.movespline->Finalized())
     {
         static_cast<D*>(this)->MovementInform(owner);
         if (i_angle == 0.f && !owner.HasInArc(0.01f, i_target.getTarget()))
