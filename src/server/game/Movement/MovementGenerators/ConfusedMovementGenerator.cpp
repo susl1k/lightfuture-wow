@@ -37,7 +37,7 @@ void ConfusedMovementGenerator<T>::Initialize(T &unit)
     unit.SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_CONFUSED);
     unit.GetPosition(i_x, i_y, i_z);
 
-    if (!unit->isAlive() || unit->IsStopped())
+    if (!unit.isAlive() || unit.IsStopped())
         return;
 
     unit.StopMoving();
@@ -49,7 +49,7 @@ void ConfusedMovementGenerator<T>::Reset(T &unit)
 {
     i_nextMoveTime.Reset(0);
 
-    if (!unit->isAlive() || unit->IsStopped())
+    if (!unit.isAlive() || unit.IsStopped())
         return;
 
     unit.StopMoving();
@@ -85,7 +85,7 @@ bool ConfusedMovementGenerator<T>::Update(T &unit, const uint32 &diff)
             pos.Relocate(i_x, i_y, i_z);
             unit.MovePositionToFirstCollision(pos, dest, 0.0f);
 
-            PathGenerator path(unit);
+            PathGenerator path(&unit);
             path.SetPathLengthLimit(30.0f);
             bool result = path.CalculatePath(pos.m_positionX, pos.m_positionY, pos.m_positionZ);
             if (!result || (path.GetPathType() & PATHFIND_NOPATH))
@@ -127,4 +127,3 @@ template void ConfusedMovementGenerator<Player>::Reset(Player &player);
 template void ConfusedMovementGenerator<Creature>::Reset(Creature &creature);
 template bool ConfusedMovementGenerator<Player>::Update(Player &player, const uint32 &diff);
 template bool ConfusedMovementGenerator<Creature>::Update(Creature &creature, const uint32 &diff);
-
