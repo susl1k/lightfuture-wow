@@ -2,9 +2,7 @@
 #define MPQ_MANAGER_H
 
 #include "MPQ.h"
-#include <ace/Synch.h>
-#include <set>
-#include <map>
+#include "ace/Synch.h"
 
 class DBC;
 class MPQManager
@@ -24,8 +22,8 @@ public:
     std::set<uint32> AvailableLocales;
     std::map<uint32, MPQArchive*> LocaleFiles;
 
-    static char const* Files[];
-    static char const* Languages[];
+    static char* Files[];
+    static char* Languages[];
 protected:
     void InitializeDBC();
 private:

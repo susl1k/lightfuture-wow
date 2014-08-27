@@ -1,6 +1,6 @@
 #ifndef WMODEL_HNDL_H
 #define WMODEL_HNDL_H
-#include "Define.h"
+#include "Common.h"
 #include "Utils.h"
 #include "WorldModelRoot.h"
 #include "ObjectDataHandler.h"

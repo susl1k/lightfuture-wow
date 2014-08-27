@@ -2,25 +2,27 @@
 #define MPQ_H
 
 #include "libmpq/mpq.h"
-#include "Define.h"
-#include <string>
+#include "Common.h"
+#include <string.h>
 #include <ctype.h>
 #include <vector>
 #include <iostream>
 #include <deque>
+
+using namespace std;
 
 class MPQArchive
 {
 
 public:
     mpq_archive_s *mpq_a;
-
-    std::vector<std::string> Files;
+    
+    vector<string> Files;
 
     MPQArchive(const char* filename);
     void close();
 
-    void GetFileListTo(std::vector<std::string>& filelist) {
+    void GetFileListTo(vector<string>& filelist) {
         uint32_t filenum;
         if(libmpq__file_number(mpq_a, "(listfile)", &filenum)) return;
         libmpq__off_t size, transferred;
@@ -38,7 +40,7 @@ public:
         while ((token != NULL) && (counter < size)) {
             //cout << token << endl;
             token[strlen(token) - 1] = 0;
-            std::string s = token;
+            string s = token;
             filelist.push_back(s);
             counter += strlen(token) + 2;
             token = strtok(NULL, seps);

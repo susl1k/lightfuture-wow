@@ -2,9 +2,10 @@
 #include "MPQ.h"
 #include "DBC.h"
 #include "Utils.h"
-#include <ace/Guard_T.h>
 
-char const* MPQManager::Files[] = {
+#include "ace/Synch.h"
+
+char* MPQManager::Files[] = {
     "common.MPQ",
     "common-2.MPQ",
     "expansion.MPQ",
@@ -14,7 +15,7 @@ char const* MPQManager::Files[] = {
     "patch-3.MPQ"
 };
 
-char const* MPQManager::Languages[] = { "enGB", "enUS", "deDE", "esES", "frFR", "koKR", "zhCN", "zhTW", "enCN", "enTW", "esMX", "ruRU" };
+char* MPQManager::Languages[] = { "enGB", "enUS", "deDE", "esES", "frFR", "koKR", "zhCN", "zhTW", "enCN", "enTW", "esMX", "ruRU" };
 
 void MPQManager::Initialize()
 {

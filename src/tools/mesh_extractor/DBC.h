@@ -1,8 +1,7 @@
 #ifndef DBC_H
 #define DBC_H
 #include <vector>
-#include <string>
-#include "Define.h"
+#include "Common.h"
 
 class Record;
 

@@ -1,6 +1,6 @@
 #include <cstdio>
 #include "DBC.h"
-#include "Define.h"
+#include "Common.h"
 
 DBC::DBC( FILE* stream ) : StringBlock(NULL), StringBlockSize(0), IsFaulty(true)
 {
@@ -56,7 +56,7 @@ std::string DBC::GetStringByOffset( int offset )
     strcpy(d, (const char*)(StringBlock + offset));
     d[len] = '\0';
     std::string val = std::string(d);
-    delete [] d;
+    delete d;
     return val;
 }
 
