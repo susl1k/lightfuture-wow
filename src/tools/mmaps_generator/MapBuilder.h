@@ -26,20 +26,24 @@
 #include "TerrainBuilder.h"
 #include "IntermediateValues.h"
 
+#include "IVMapManager.h"
+#include "WorldModel.h"
+
 #include "Recast.h"
 #include "DetourNavMesh.h"
 
-#include <ace/Task.h>
-#include <ace/Activation_Queue.h>
-#include <ace/Method_Request.h>
+#include "ace/Task.h"
+#include "ace/Activation_Queue.h"
+#include "ace/Method_Request.h"
 
+using namespace std;
 using namespace VMAP;
 
 // G3D namespace typedefs conflicts with ACE typedefs
 
 namespace MMAP
 {
-    typedef std::map<uint32, std::set<uint32>*> TileList;
+    typedef map<uint32,set<uint32>*> TileList;
     struct Tile
     {
         Tile() : chf(NULL), solid(NULL), cset(NULL), pmesh(NULL), dmesh(NULL) {}
@@ -61,7 +65,7 @@ namespace MMAP
     class MapBuilder
     {
         public:
-            MapBuilder(float maxWalkableAngle   = 55.f,
+            MapBuilder(float maxWalkableAngle   = 60.f,
                 bool skipLiquid          = false,
                 bool skipContinents      = false,
                 bool skipJunkMaps        = true,
@@ -85,7 +89,7 @@ namespace MMAP
         private:
             // detect maps and tiles
             void discoverTiles();
-            std::set<uint32>* getTileList(uint32 mapID);
+            set<uint32>* getTileList(uint32 mapID);
 
             void buildNavMesh(uint32 mapID, dtNavMesh* &navMesh);
 
@@ -125,11 +129,11 @@ namespace MMAP
             // build performance - not really used for now
             rcContext* m_rcContext;
     };
-
-    class MapBuildRequest : public ACE_Method_Request
+        
+    class BuildAMapPlz : public ACE_Method_Request
     {
         public:
-            MapBuildRequest(uint32 mapId) : _mapId(mapId) {}
+            BuildAMapPlz(uint32 mapId) : _mapId(mapId) {}
 
             virtual int call()
             {
@@ -141,7 +145,7 @@ namespace MMAP
             uint32 _mapId;
     };
 
-    class BuilderThread : public ACE_Task_Base
+    class BuilderThread : public ACE_Task<ACE_MT_SYNCH>
     {
     private:
         MapBuilder* _builder;
@@ -152,18 +156,16 @@ namespace MMAP
 
         int svc()
         {
-            /// @ Set a timeout for dequeue attempts (only used when the queue is empty) as it will never get populated after thread starts
-            ACE_Time_Value timeout(5);
-            ACE_Method_Request* request = NULL;
-            while ((request = _queue->dequeue(&timeout)) != NULL)
+            BuildAMapPlz* request = NULL;
+            while (request = (BuildAMapPlz*)_queue->dequeue())
             {
                 _builder->buildMap(request->call());
                 delete request;
                 request = NULL;
             }
-
             return 0;
         }
+
     };
 
     class BuilderThreadPool
@@ -172,7 +174,7 @@ namespace MMAP
             BuilderThreadPool() : _queue(new ACE_Activation_Queue()) {}
             ~BuilderThreadPool() { _queue->queue()->close(); delete _queue; }
 
-            void Enqueue(MapBuildRequest* request)
+            void Enqueue(BuildAMapPlz* request)
             {
                 _queue->enqueue(request);
             }

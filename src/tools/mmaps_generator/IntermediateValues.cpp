@@ -37,7 +37,7 @@ namespace MMAP
 
         printf("%sWriting debug output...                       \r", tileString);
 
-        std::string name("meshes/%03u%02i%02i.");
+        string name("meshes/%03u%02i%02i.");
 
 #define DEBUG_WRITE(fileExtension,data) \
     do { \
