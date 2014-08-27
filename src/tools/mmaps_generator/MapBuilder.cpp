@@ -162,7 +162,7 @@ namespace MMAP
     {
         std::vector<BuilderThread*> _threads;
                 
-        BuilderThreadPool* pool = new BuilderThreadPool();
+        BuilderThreadPool* pool = threads > 0 ? new BuilderThreadPool() : NULL;
 
         for (TileList::iterator it = m_tiles.begin(); it != m_tiles.end(); ++it)
         {
@@ -170,7 +170,7 @@ namespace MMAP
             if (!shouldSkipMap(mapID))
             {
                 if (threads > 0)
-                    pool->Enqueue(new BuildAMapPlz(mapID));
+                    pool->Enqueue(new MapBuildRequest(mapID));
                 else
                     buildMap(mapID);
             }
