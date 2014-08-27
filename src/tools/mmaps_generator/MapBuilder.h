@@ -26,24 +26,20 @@
 #include "TerrainBuilder.h"
 #include "IntermediateValues.h"
 
-#include "IVMapManager.h"
-#include "WorldModel.h"
-
 #include "Recast.h"
 #include "DetourNavMesh.h"
 
-#include "ace/Task.h"
-#include "ace/Activation_Queue.h"
-#include "ace/Method_Request.h"
+#include <ace/Task.h>
+#include <ace/Activation_Queue.h>
+#include <ace/Method_Request.h>
 
-using namespace std;
 using namespace VMAP;
 
 // G3D namespace typedefs conflicts with ACE typedefs
 
 namespace MMAP
 {
-    typedef map<uint32,set<uint32>*> TileList;
+    typedef std::map<uint32, std::set<uint32>*> TileList;
     struct Tile
     {
         Tile() : chf(NULL), solid(NULL), cset(NULL), pmesh(NULL), dmesh(NULL) {}
@@ -65,7 +61,7 @@ namespace MMAP
     class MapBuilder
     {
         public:
-            MapBuilder(float maxWalkableAngle   = 60.f,
+            MapBuilder(float maxWalkableAngle   = 55.f,
                 bool skipLiquid          = false,
                 bool skipContinents      = false,
                 bool skipJunkMaps        = true,
@@ -89,7 +85,7 @@ namespace MMAP
         private:
             // detect maps and tiles
             void discoverTiles();
-            set<uint32>* getTileList(uint32 mapID);
+            std::set<uint32>* getTileList(uint32 mapID);
 
             void buildNavMesh(uint32 mapID, dtNavMesh* &navMesh);
 
@@ -129,7 +125,7 @@ namespace MMAP
             // build performance - not really used for now
             rcContext* m_rcContext;
     };
-        
+
     class MapBuildRequest : public ACE_Method_Request
     {
         public:
@@ -165,9 +161,9 @@ namespace MMAP
                 delete request;
                 request = NULL;
             }
+
             return 0;
         }
-
     };
 
     class BuilderThreadPool
