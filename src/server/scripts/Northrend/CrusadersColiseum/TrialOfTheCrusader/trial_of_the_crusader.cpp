@@ -139,8 +139,8 @@ class npc_announcer_toc10 : public CreatureScript
 				uint8 i = 0;
 				for (; i < NUM_MESSAGES; ++i)
 				{
-					if (	(!_GossipMessage[i].state && instanceScript->GetData(_GossipMessage[i].encounter) != DONE)
-						|| (_GossipMessage[i].state && instanceScript->GetData(_GossipMessage[i].encounter) == DONE))
+					if ((!_GossipMessage[i].state && instanceScript->GetData(_GossipMessage[i].encounter) != DONE) ||
+						(_GossipMessage[i].state && instanceScript->GetData(_GossipMessage[i].encounter) == DONE))
 					{
 						player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, _message, GOSSIP_SENDER_MAIN, _GossipMessage[i].id);
 						break;
@@ -183,16 +183,17 @@ class npc_announcer_toc10 : public CreatureScript
 					if (Creature* jaraxxus = Unit::GetCreature(*player, instanceScript->GetData64(NPC_JARAXXUS)))
 					{
 						jaraxxus->RemoveAurasDueToSpell(SPELL_JARAXXUS_CHAINS);
-						jaraxxus->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+						jaraxxus->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_NPC | UNIT_FLAG_IMMUNE_TO_PC);
 						jaraxxus->SetReactState(REACT_AGGRESSIVE);
-						//jaraxxus->SetInCombatWithZone();
+						jaraxxus->SetInCombatWithZone();
 					}
 					else if (instanceScript->GetData(TYPE_JARAXXUS) != DONE)
 					{
 						instanceScript->SetData(TYPE_EVENT, 1010);
 						instanceScript->SetData(TYPE_JARAXXUS, NOT_STARTED);
 					}
-					if (Creature* icehowlDespawn = Unit::GetCreature(*creature, instanceScript->GetData64(NPC_ICEHOWL))) {
+					if (Creature* icehowlDespawn = Unit::GetCreature(*creature, instanceScript->GetData64(NPC_ICEHOWL)))
+					{
 						icehowlDespawn->SetVisible(false);
 					}
 					break;

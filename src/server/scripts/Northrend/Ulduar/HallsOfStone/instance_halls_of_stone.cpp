@@ -179,6 +179,10 @@ public:
                         if (go)
                             go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_INTERACT_COND);
                     }
+					else if (m_auiEncounter[2] == FAIL)
+					{
+                        HandleGameObject(uiSjonnirDoor, true);
+					}
                     break;
             }
 

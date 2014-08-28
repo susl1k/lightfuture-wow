@@ -452,7 +452,7 @@ class boss_valithria_dreamwalker : public CreatureScript
 							if (!IsHeroic())
 								Talk(SAY_VALITHRIA_DREAM_PORTAL);
 							for (uint32 i = 0; i < _portalCount; ++i)
-								DoCast(me, SUMMON_PORTAL);
+								DoCast(me, SUMMON_PORTAL, true);
 							_events.ScheduleEvent(EVENT_DREAM_PORTAL, urand(45000, 48000));
 							break;
 						case EVENT_DREAM_SLIP:

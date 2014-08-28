@@ -203,6 +203,11 @@ public:
             }
         }
 
+		void JustDied(Unit* killer) override
+		{
+            instance->SetData(DATA_BRANN_EVENT, FAIL);
+		}
+
         void DespawnDwarf()
         {
             if (lDwarfGUIDList.empty())
@@ -467,17 +472,11 @@ public:
 
 						
 						if (GameObject* kaddrak = me->FindNearestGameObject(GO_KADDRAK, 100))
-						{
 							kaddrak->ResetDoorOrButton();
-						}
 						if (GameObject* marnak = me->FindNearestGameObject(GO_MARNAK, 100))
-						{
 							marnak->ResetDoorOrButton();
-						}
 						if (GameObject* abedneum = me->FindNearestGameObject(GO_ABEDNEUM, 100))
-						{
 							abedneum->ResetDoorOrButton();
-						}
 
                         bIsBattle = true;
                         SetEscortPaused(false);
@@ -645,10 +644,7 @@ public:
 
 	struct npc_dark_matterAI : public NullCreatureAI
     {
-        npc_dark_matterAI(Creature* creature) : NullCreatureAI(creature)
-        {
-
-        }
+        npc_dark_matterAI(Creature* creature) : NullCreatureAI(creature) { }
 
 		bool casted;
 
@@ -669,7 +665,7 @@ public:
 			{
 				casted = true;
 				DoCastAOE(SPELL_DARK_MATTER);
-				me->DespawnOrUnsummon(500);
+				me->DespawnOrUnsummon(2000);
 			}
 		}
     };

@@ -896,26 +896,6 @@ class npc_muradin_gunship : public CreatureScript
 				RespawnQueue.clear();
 			}
 
-			void EnterCombat(Unit* who)
-			{
-				DoCast(70339);
-				me->setActive(true);
-				DoZoneInCombat();
-				events.RescheduleEvent(EVENT_EXPERIENCED, urand(19000, 21000)); // ~20 sec
-				events.RescheduleEvent(EVENT_VETERAN, urand(39000, 41000));     // ~40 sec
-				events.RescheduleEvent(EVENT_ELITE, urand(59000, 61000));       // ~60 sec
-			}
-
-			void EnterEvadeMode()
-			{
-				me->RemoveAurasDueToSpell(SPELL_EXPERIENCED);
-				me->RemoveAurasDueToSpell(SPELL_ELITE);
-				me->RemoveAurasDueToSpell(SPELL_VETERAN);
-				events.CancelEvent(EVENT_EXPERIENCED);
-				events.CancelEvent(EVENT_VETERAN);
-				events.CancelEvent(EVENT_ELITE);
-			}
-
 			void SendMusicToPlayers(uint32 musicId) const
 			{
 				WorldPacket data(SMSG_PLAY_MUSIC, 4);
@@ -986,6 +966,9 @@ class npc_muradin_gunship : public CreatureScript
 							RelocateTransport(CheckUnfriendlyShip(me,_instance, DATA_GB_HIGH_OVERLORD_SAURFANG));
 							if (Creature* saurfang = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_HIGH_OVERLORD_SAURFANG)))
 								saurfang->AI()->DoAction(ACTION_ALLIANCE_VERSION_START);
+							if (Creature* meCopy = me->SummonCreature(2000120, *me, TEMPSUMMON_MANUAL_DESPAWN))
+								meCopy->AI()->SetData(1,1);
+							me->SetVisible(false);
 							events.ScheduleEvent(EVENT_SUMMON_PORTAL, 30000);
 							events.ScheduleEvent(EVENT_WIPE_CHECK, 5000);
 						}
@@ -995,7 +978,7 @@ class npc_muradin_gunship : public CreatureScript
 					}
 					case ACTION_HORDE_VERSION_START:
 					{
-						me->SummonCreature(2000120, -422.0f, 2476.0f, 470.5f, M_PI);
+						me->SummonCreature(2000120, -422.0f, 2476.0f, 470.5f, M_PI);//utocici velitel druhy lode
 						me->SetVisible(false);
 						me->setFaction(35);
 						
@@ -1010,7 +993,6 @@ class npc_muradin_gunship : public CreatureScript
 						}
 						
 						events.RescheduleEvent(EVENT_SPAWN_MAGE, 20000);
-						//events.ScheduleEvent(EVENT_PLAYER_CHECK, 1000);
 						break;
 					}
 					case ACTION_HORDE_VERSION_DONE:
@@ -1027,6 +1009,7 @@ class npc_muradin_gunship : public CreatureScript
 
 						me->SetReactState(REACT_PASSIVE);
 						_instance->SetBossState(DATA_GUNSHIP_EVENT, DONE);
+						DoCastAOE(72959, true);
 						_instance->DoCastSpellOnPlayers(SPELL_REMOVE_ROCKET_PACK);
 						Talk(SAY_ALLIANCE_VICTORY);
 						StartFlyShip(CheckUnfriendlyShip(me, _instance, DATA_GB_HIGH_OVERLORD_SAURFANG));
@@ -1086,26 +1069,6 @@ class npc_muradin_gunship : public CreatureScript
 				{
 					switch (eventId)
 					{
-						case EVENT_PLAYER_CHECK:
-						{
-							bool found = false;
-							Map::PlayerList const &lPlayers = map->GetPlayers();
-							if (!lPlayers.isEmpty())
-								for(Map::PlayerList::const_iterator itr = lPlayers.begin(); itr != lPlayers.end(); ++itr)
-									if (Player* pPlayer = itr->getSource())
-										if (pPlayer->isAlive() && !pPlayer->isGameMaster())
-											if (pPlayer->GetPositionY() > 2437.0f && pPlayer->GetPositionZ() > 460.0f)
-											{
-												found = true;
-												me->SetInCombatWith(pPlayer);
-												me->AddThreat(pPlayer, 10.0f);
-											}
-							if (!found)
-								EnterEvadeMode();
-							events.ScheduleEvent(EVENT_PLAYER_CHECK, 500);
-							break;
-						}
-						break;
 						case EVENT_WIPE_CHECK:
 							DoCheckFallingPlayer(me);
 							if (DoWipeCheck(skybreaker))
@@ -1155,7 +1118,8 @@ class npc_muradin_gunship : public CreatureScript
 							{
 								events.ScheduleEvent(EVENT_BOARDING_TALK, 10000);
 								events.ScheduleEvent(EVENT_BOARDING_GUNSHIP, 2500); // TODO: Fix the timers
-								skybreaker->AddNPCPassengerInInstance(NPC_GB_PORTAL, -15.51547f, -0.160213f, 28.87252f, 1.56211f);
+								CheckUnfriendlyShip(me,_instance, DATA_GB_HIGH_OVERLORD_SAURFANG)->AddNPCPassengerInInstance(NPC_GB_PORTAL, 32.18615f, 0.00016f, 38.78849f, 3.13683f);
+								skybreaker->AddNPCPassengerInInstance(NPC_GB_PORTAL, -15.51547f, -0.160213f, 28.87252f, 1.56211f)->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 							}
 							break;
 						case EVENT_BOARDING_TALK:
@@ -1172,7 +1136,7 @@ class npc_muradin_gunship : public CreatureScript
 								if (Creature* sergante = me->SummonCreature(NPC_GB_KORKRON_SERGANTE, -391.0f, 2069.0f, 466.8f, 5.04f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
 								{
 									sergante->CastSpell(sergante, SPELL_TELEPORT_VISUAL, true);
-									me->Attack(sergante, true);
+									//me->Attack(sergante, true);fd
 								}
 								events.ScheduleEvent(EVENT_SUMMON_PORTAL, 90000);
 								events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 3000);
@@ -1187,7 +1151,7 @@ class npc_muradin_gunship : public CreatureScript
 										reavers->CastSpell(reavers, SPELL_TELEPORT_VISUAL, true);
 										events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 21000 / SummonCount);
 										++count;
-										me->Attack(reavers, true);
+										//me->Attack(reavers, true);fds
 									}
 							break;
 						case EVENT_OUTRO_ALLIANCE_1:
@@ -1232,35 +1196,8 @@ class npc_muradin_gunship : public CreatureScript
 							}
 						}
 						break;
-						case EVENT_EXPERIENCED:
-							DoCast(me, SPELL_EXPERIENCED);
-							break;
-						case EVENT_VETERAN:
-							me->RemoveAurasDueToSpell(SPELL_EXPERIENCED);
-							DoCast(me, SPELL_VETERAN);
-							break;
-						case EVENT_ELITE:
-							me->RemoveAurasDueToSpell(SPELL_VETERAN);
-							DoCast(me, SPELL_ELITE);
-							break;
 					  }
 				}
-
-				if (!UpdateVictim())
-					return;
-
-				if (me->IsWithinMeleeRange(me->getVictim()))
-					DoMeleeAttackIfReady();
-				else if (me->isAttackReady())
-				{
-					DoCastVictim(SPELL_RENDING_THROW);
-					me->resetAttackTimer();
-				}
-			}
-
-			bool CanAIAttack(Unit const* target) const
-			{
-				return target->GetEntry() == NPC_GB_KORKRON_SERGANTE || target->GetEntry() == NPC_GB_KORKRON_REAVERS;
 			}
 
 			private:
@@ -1379,26 +1316,6 @@ class npc_saurfang_gunship : public CreatureScript
 				RespawnQueue.clear();
 			}
 
-			void EnterCombat(Unit* who)
-			{
-				DoCast(70339);
-				me->setActive(true);
-				DoZoneInCombat();
-				events.RescheduleEvent(EVENT_EXPERIENCED, urand(19000, 21000)); // ~20 sec
-				events.RescheduleEvent(EVENT_VETERAN, urand(39000, 41000));     // ~40 sec
-				events.RescheduleEvent(EVENT_ELITE, urand(59000, 61000));       // ~60 sec
-			}
-
-			void EnterEvadeMode()
-			{
-				me->RemoveAurasDueToSpell(SPELL_EXPERIENCED);
-				me->RemoveAurasDueToSpell(SPELL_ELITE);
-				me->RemoveAurasDueToSpell(SPELL_VETERAN);
-				events.CancelEvent(EVENT_EXPERIENCED);
-				events.CancelEvent(EVENT_VETERAN);
-				events.CancelEvent(EVENT_ELITE);
-			}
-
 			void SendMusicToPlayers(uint32 musicId) const
 			{
 				WorldPacket data(SMSG_PLAY_MUSIC, 4);
@@ -1467,6 +1384,9 @@ class npc_saurfang_gunship : public CreatureScript
 							RelocateTransport(CheckUnfriendlyShip(me,_instance, DATA_GB_MURADIN_BRONZEBEARD));
 							if (Creature* muradin = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_MURADIN_BRONZEBEARD)))
 								muradin->AI()->DoAction(ACTION_HORDE_VERSION_START);
+							if (Creature* meCopy = me->SummonCreature(2000130, *me, TEMPSUMMON_MANUAL_DESPAWN))
+								meCopy->AI()->SetData(1,1);
+							me->SetVisible(false);
 							events.ScheduleEvent(EVENT_SUMMON_PORTAL, 30000);
 							events.ScheduleEvent(EVENT_WIPE_CHECK, 5000);
 						}
@@ -1476,7 +1396,7 @@ class npc_saurfang_gunship : public CreatureScript
 					}
 					case ACTION_ALLIANCE_VERSION_START:
 					{
-						me->SummonCreature(2000130, -349.0f, 2001.0f, 468.5f, M_PI);
+						me->SummonCreature(2000130, -349.0f, 2001.0f, 468.5f, M_PI);//utocici velitel druhy lode
 						me->SetVisible(false);
 						me->setFaction(35);
 						
@@ -1491,7 +1411,6 @@ class npc_saurfang_gunship : public CreatureScript
 						}
 						
 						events.RescheduleEvent(EVENT_SPAWN_MAGE, 20000);
-						//events.ScheduleEvent(EVENT_PLAYER_CHECK, 1000);
 						break;
 					}
 					case ACTION_ALLIANCE_VERSION_DONE:
@@ -1508,6 +1427,7 @@ class npc_saurfang_gunship : public CreatureScript
 
 						me->SetReactState(REACT_PASSIVE);
 						_instance->SetBossState(DATA_GUNSHIP_EVENT, DONE);
+						DoCastAOE(72959, true);
 						_instance->DoCastSpellOnPlayers(SPELL_REMOVE_ROCKET_PACK);
 						Talk(SAY_HORDE_VICTORY);
 						StartFlyShip(CheckUnfriendlyShip(me, _instance, DATA_GB_MURADIN_BRONZEBEARD));
@@ -1568,25 +1488,6 @@ class npc_saurfang_gunship : public CreatureScript
 				{
 					switch (eventId)
 					{
-						case EVENT_PLAYER_CHECK:
-						{
-							bool found = false;
-							Map::PlayerList const &lPlayers = map->GetPlayers();
-							if (!lPlayers.isEmpty())
-								for(Map::PlayerList::const_iterator itr = lPlayers.begin(); itr != lPlayers.end(); ++itr)
-									if (Player* pPlayer = itr->getSource())
-										if (pPlayer->isAlive() && !pPlayer->isGameMaster())
-											if (pPlayer->GetPositionY() < 2033.0f && pPlayer->GetPositionZ() > 450.0f)
-											{
-												found = true;
-												me->SetInCombatWith(pPlayer);
-												me->AddThreat(pPlayer, 10.0f);
-											}
-							if (!found)
-								EnterEvadeMode();
-							events.ScheduleEvent(EVENT_PLAYER_CHECK, 500);
-							break;
-						}
 						case EVENT_WIPE_CHECK:
 							DoCheckFallingPlayer(me);
 							if (DoWipeCheck(orgrimmar))
@@ -1628,7 +1529,8 @@ class npc_saurfang_gunship : public CreatureScript
 						case EVENT_SUMMON_PORTAL:
 							if (!EventDone)
 							{
-								orgrimmar->AddNPCPassengerInInstance(NPC_GB_PORTAL, 15.03016f, 0.00016f, 37.70952f, 1.55138f);
+								CheckUnfriendlyShip(me,_instance, DATA_GB_MURADIN_BRONZEBEARD)->AddNPCPassengerInInstance(NPC_GB_PORTAL, 8.51547f, -0.160213f, 20.87252f, 3.10672f);
+								orgrimmar->AddNPCPassengerInInstance(NPC_GB_PORTAL, 15.03016f, 0.00016f, 37.70952f, 1.55138f)->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);;
 								events.ScheduleEvent(EVENT_BOARDING_TALK, 2500);
 								events.ScheduleEvent(EVENT_BOARDING_GUNSHIP, 2500); // TODO: Fix the timers
 							}
@@ -1647,7 +1549,7 @@ class npc_saurfang_gunship : public CreatureScript
 								if (Creature* sergante = me->SummonCreature(NPC_GB_SKYBREAKER_SERGANTE, -423.0f, 2398.0f, 472.0f, 1.64f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
 								{
 									sergante->CastSpell(sergante, SPELL_TELEPORT_VISUAL, true);
-									me->Attack(sergante, true);
+									//me->Attack(sergante, true);
 								}
 								events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 3000);
 								events.ScheduleEvent(EVENT_SUMMON_PORTAL, 90000);
@@ -1662,7 +1564,7 @@ class npc_saurfang_gunship : public CreatureScript
 										marine->CastSpell(marine, SPELL_TELEPORT_VISUAL, true);
 										count++;
 										events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 21000 / SummonCount);
-										me->Attack(marine, true);
+										//me->Attack(marine, true);
 									}
 							break;
 						case EVENT_OUTRO_HORDE_1:
@@ -1707,35 +1609,8 @@ class npc_saurfang_gunship : public CreatureScript
 							}
 						}
 						break;
-						case EVENT_EXPERIENCED:
-							DoCast(me, SPELL_EXPERIENCED);
-							break;
-						case EVENT_VETERAN:
-							me->RemoveAurasDueToSpell(SPELL_EXPERIENCED);
-							DoCast(me, SPELL_VETERAN);
-							break;
-						case EVENT_ELITE:
-							me->RemoveAurasDueToSpell(SPELL_VETERAN);
-							DoCast(me, SPELL_ELITE);
-							break;
 					  }
 				}
-
-				if (!UpdateVictim())
-					return;
-
-				if (me->IsWithinMeleeRange(me->getVictim()))
-					DoMeleeAttackIfReady();
-				else if (me->isAttackReady())
-				{
-					DoCastVictim(SPELL_RENDING_THROW);
-					me->resetAttackTimer();
-				}
-			}
-			
-			bool CanAIAttack(Unit const* target) const
-			{
-				return target->GetEntry() == NPC_GB_SKYBREAKER_SERGANTE || target->GetEntry() == NPC_GB_SKYBREAKER_MARINE;
 			}
 
 			private:
@@ -2641,6 +2516,35 @@ class npc_gunship_portal : public CreatureScript
 	public:
 		npc_gunship_portal() : CreatureScript("npc_gunship_portal") { }
 
+		bool OnGossipHello(Player* player, Creature* pCreature) override
+		{
+			if (pCreature->GetInstanceScript())
+			{
+				if (pCreature->GetInstanceScript()->GetBossState(DATA_GUNSHIP_EVENT) == IN_PROGRESS)
+				{
+					if (pCreature->GetInstanceScript()->GetData(DATA_TEAM_IN_INSTANCE) == ALLIANCE)
+					{
+						if (Creature* pAllianceBoss = ObjectAccessor::GetCreature(*pCreature, pCreature->GetInstanceScript()->GetData64(DATA_SKYBREAKER_BOSS)))
+						{
+							sLog->outError("portuju hrace");
+							player->NearTeleportTo(pAllianceBoss->GetPositionX(), pAllianceBoss->GetPositionY(), pAllianceBoss->GetPositionZ() + 5.0f, pAllianceBoss->GetOrientation());
+						}
+					}
+					else
+					{
+						if (Creature* pHordeBoss = ObjectAccessor::GetCreature(*pCreature, pCreature->GetInstanceScript()->GetData64(DATA_ORGRIMMAR_HAMMER_BOSS)))
+						{
+							sLog->outError("portuju hrace");
+							player->NearTeleportTo(pHordeBoss->GetPositionX(), pHordeBoss->GetPositionY(), pHordeBoss->GetPositionZ() + 5.0f, pHordeBoss->GetOrientation());
+						}
+					}
+				}
+			}
+			//player->CLOSE_GOSSIP_MENU();
+
+			return true;
+		}
+
 		struct npc_gunship_portalAI : public Scripted_NoMovementAI
 		{
 			npc_gunship_portalAI(Creature *creature) : Scripted_NoMovementAI(creature),_instance(creature->GetInstanceScript())
@@ -2651,7 +2555,6 @@ class npc_gunship_portal : public CreatureScript
 			void Reset()
 			{
 			   events.ScheduleEvent(EVENT_UNSUMMON_PORTAL, 20500); // TODO: Fix the timers
-			   me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
 			}
 
 			void JustDied(Unit* killer)
@@ -3651,20 +3554,51 @@ class npc_commander : public CreatureScript
 		{
 			npc_commanderAI(Creature *creature) : ScriptedAI(creature)
 			{
+				friendly = false;
 				Reset();
+			}
+
+			void NastavitFrakci()
+			{
+				/*
+				if (!friendly)
+					me->setFaction(21);
+				else
+					me->setFaction(35);
+				*/
+			}
+
+			void EnterCombat(Unit* attacker)
+			{
+				if (!friendly)
+					events.ScheduleEvent(EVENT_PLAYER_CHECK, 500);
+				else
+					DoCast(70339);
+
+				ScriptedAI::EnterCombat(attacker);
 			}
 			
 			void Reset()
 			{
 				events.Reset();
-				events.ScheduleEvent(EVENT_PLAYER_CHECK, 500);
 				CanCleave = true;
 				ThrowEventScheduled = false;
-				me->setFaction(21);
+
+				ScriptedAI::Reset();
+			}
+
+			void SetData(uint32 type, uint32 data)
+			{
+				friendly = data;
+				NastavitFrakci();
 			}
 			
 			void DamageTaken(Unit* /*attacker*/, uint32& damage)
 			{
+				if (friendly)
+				{
+					//TODO FAIL
+				}
 				if (damage > me->GetHealth())
 					damage = me->GetHealth() - 1;
 			}
@@ -3676,10 +3610,11 @@ class npc_commander : public CreatureScript
 				
 				if (UpdateVictim())
 				{
-					if (me->getVictim()->GetPositionY() > 2033.0f && me->getVictim()->GetPositionY() < 2437.0f)
+					if ((!friendly) == (me->getVictim()->GetPositionY() > 2033.0f && me->getVictim()->GetPositionY() < 2437.0f))
 						me->getThreatManager().modifyThreatPercent(me->getVictim(), -100);
 					
 					else if (!me->getVictim()->IsWithinDistInMap(me, 10.0f, false))
+					{
 						if (!ThrowEventScheduled)
 						{
 							ThrowEventScheduled = true;
@@ -3687,6 +3622,7 @@ class npc_commander : public CreatureScript
 							DoCast(me, SPELL_BATTLE_FURY);
 							events.ScheduleEvent(EVENT_RENDING_THROW, 4000);
 						}
+					}
 				}
 
 				events.Update(diff);
@@ -3731,7 +3667,7 @@ class npc_commander : public CreatureScript
 				if (me->isAttackReady() && me->IsWithinMeleeRange(me->getVictim()))
 					DoCast(me, SPELL_BATTLE_FURY);
 				
-				if (CanCleave && !me->GetCurrentSpell(CURRENT_MELEE_SPELL))
+				if (CanCleave)
 				{
 					DoCastVictim(SPELL_CLEAVE);
 					CanCleave = false;
@@ -3740,11 +3676,22 @@ class npc_commander : public CreatureScript
 				
 				DoMeleeAttackIfReady();
 			}
+
+			bool CanAIAttack(Unit const* target) const
+			{
+				return	(!friendly) == (target->ToPlayer() != NULL);/* ||
+						friendly &&
+						(
+							target->GetEntry() == NPC_GB_KORKRON_SERGANTE || target->GetEntry() == NPC_GB_KORKRON_REAVERS ||
+							target->GetEntry() == NPC_GB_SKYBREAKER_SERGANTE || target->GetEntry() == NPC_GB_SKYBREAKER_MARINE
+						);*/
+			}
 			
 			private:
 				EventMap events;
 				bool CanCleave;
 				bool ThrowEventScheduled;
+				bool friendly;
 		};
 
 		CreatureAI* GetAI(Creature* pCreature) const

@@ -1255,22 +1255,22 @@ class npc_lorekeeper : public CreatureScript
                 case GOSSIP_ACTION_INFO_DEF+1:
                     if (player)
                     {
-			player->CLOSE_GOSSIP_MENU();
-			creature->DespawnOrUnsummon();
-			//creature->AI()->DoAction(0);
+						player->CLOSE_GOSSIP_MENU();
+						creature->DespawnOrUnsummon();
+						//creature->AI()->DoAction(0);
                     }
                     break;
                 case GOSSIP_ACTION_INFO_DEF+2:
-		    instance->instance->LoadGrid(364, -16);
+					instance->instance->LoadGrid(364, -16);
                     if (player)
                         player->CLOSE_GOSSIP_MENU();
 
                     if (Creature* leviathan = instance->instance->GetCreature(instance->GetData64(TYPE_LEVIATHAN)))
                     {
                         CAST_AI(boss_flame_leviathan::boss_flame_leviathanAI, (leviathan->AI()))->DoAction(0); //enable hard mode activating the 4 additional events spawning additional vehicles
-			creature->DespawnOrUnsummon();
+						creature->DespawnOrUnsummon();
                        // creature->AI()->DoAction(0); // spawn the vehicles
-			/*
+						/*
                         if (Creature* Delorah = creature->FindNearestCreature(NPC_DELORAH, 1000, true))
                         {
                             if (Creature* Branz = creature->FindNearestCreature(NPC_BRANZ_BRONZBEARD, 1000, true))
@@ -1279,7 +1279,7 @@ class npc_lorekeeper : public CreatureScript
                                 //TODO DoScriptText(xxxx, Delorah, Branz); when reached at branz
                             }
                         }
-			*/
+						*/
                     }
                     break;
             }
@@ -1290,14 +1290,14 @@ class npc_lorekeeper : public CreatureScript
         bool OnGossipHello(Player* player, Creature* creature)
         {
             InstanceScript* instance = creature->GetInstanceScript();
-            if (instance && instance->GetData(TYPE_LEVIATHAN) !=DONE && player)
+            if (instance && instance->GetData(TYPE_LEVIATHAN) != DONE && player)
             {
                 player->PrepareGossipMenu(creature);
 
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-                player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-		player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+2);
-		player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+                //player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+                //player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
+				player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+2);
+				player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
             }
             return true;
         }

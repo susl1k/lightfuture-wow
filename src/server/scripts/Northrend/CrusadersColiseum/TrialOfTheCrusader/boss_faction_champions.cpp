@@ -291,13 +291,6 @@ struct boss_faction_championsAI : public ScriptedAI
 	{
 		m_instance = (InstanceScript*) creature->GetInstanceScript();
 		mAIType = aitype;
-		//maskou: polymorph, sap, banish
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 1499, true);//hunter trap
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 60192, true);//hunter trap
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 51514, true);//shaman hex
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 5782, true);//warlock fear
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 2094, true);//rogue blind
-		creature->ApplySpellImmune(0, IMMUNITY_ID, 20066, true);//Repentance
 	}
 
 	InstanceScript* m_instance;
