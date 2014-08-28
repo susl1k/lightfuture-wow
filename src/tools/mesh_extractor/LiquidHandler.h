@@ -2,7 +2,7 @@
 #define LIQUID_H
 #include "ADT.h"
 #include "Utils.h"
-#include "Define.h"
+#include "Common.h"
 
 #include <vector>
 

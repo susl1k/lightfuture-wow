@@ -22,6 +22,8 @@
 #include "WorldModel.h"
 #include "ModelInstance.h"
 
+using namespace std;
+
 namespace VMAP
 {
     // Need direct access to encapsulated VMAP data, so we add functions for MMAP generator
@@ -41,13 +43,13 @@ namespace VMAP
     }
 
     // declared in src/shared/vmap/WorldModel.h
-    void WorldModel::getGroupModels(std::vector<GroupModel> &groupModels)
+    void WorldModel::getGroupModels(vector<GroupModel> &groupModels)
     {
         groupModels = this->groupModels;
     }
 
     // declared in src/shared/vmap/WorldModel.h
-    void GroupModel::getMeshData(std::vector<G3D::Vector3> &vertices, std::vector<MeshTriangle> &triangles, WmoLiquid* &liquid)
+    void GroupModel::getMeshData(vector<Vector3> &vertices, vector<MeshTriangle> &triangles, WmoLiquid* &liquid)
     {
         vertices = this->vertices;
         triangles = this->triangles;
@@ -61,7 +63,7 @@ namespace VMAP
     }
 
     // declared in src/shared/vmap/WorldModel.h
-    void WmoLiquid::getPosInfo(uint32 &tilesX, uint32 &tilesY, G3D::Vector3 &corner) const
+    void WmoLiquid::getPosInfo(uint32 &tilesX, uint32 &tilesY, Vector3 &corner) const
     {
         tilesX = iTilesX;
         tilesY = iTilesY;

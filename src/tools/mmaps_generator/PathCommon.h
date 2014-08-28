@@ -21,7 +21,6 @@
 
 #include <string>
 #include <vector>
-#include <ace/OS_NS_sys_time.h>
 
 #include "Define.h"
 
@@ -34,19 +33,7 @@
     #include <errno.h>
 #endif
 
-enum NavTerrain
-{
-    NAV_EMPTY   = 0x00,
-    NAV_GROUND  = 0x01,
-    NAV_MAGMA   = 0x02,
-    NAV_SLIME   = 0x04,
-    NAV_WATER   = 0x08,
-    NAV_UNUSED1 = 0x10,
-    NAV_UNUSED2 = 0x20,
-    NAV_UNUSED3 = 0x40,
-    NAV_UNUSED4 = 0x80
-    // we only have 8 bits
-};
+using namespace std;
 
 namespace MMAP
 {
@@ -88,12 +75,12 @@ namespace MMAP
         LISTFILE_OK = 1
     };
 
-    inline ListFilesResult getDirContents(std::vector<std::string> &fileList, std::string dirpath = ".", std::string filter = "*")
+    inline ListFilesResult getDirContents(vector<string> &fileList, string dirpath = ".", string filter = "*")
     {
     #ifdef WIN32
         HANDLE hFind;
         WIN32_FIND_DATA findFileInfo;
-        std::string directory;
+        string directory;
 
         directory = dirpath + "/" + filter;
 
@@ -104,7 +91,7 @@ namespace MMAP
         do
         {
             if ((findFileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
-                fileList.push_back(std::string(findFileInfo.cFileName));
+                fileList.push_back(string(findFileInfo.cFileName));
         }
         while (FindNextFile(hFind, &findFileInfo));
 
@@ -122,7 +109,7 @@ namespace MMAP
             if ((dp = readdir(dirp)) != NULL)
             {
                 if (matchWildcardFilter(filter.c_str(), dp->d_name))
-                    fileList.push_back(std::string(dp->d_name));
+                    fileList.push_back(string(dp->d_name));
             }
             else
                 break;
@@ -135,26 +122,6 @@ namespace MMAP
     #endif
 
         return LISTFILE_OK;
-    }
-
-    inline uint32 getMSTime()
-    {
-        static const ACE_Time_Value ApplicationStartTime = ACE_OS::gettimeofday();
-        return (ACE_OS::gettimeofday() - ApplicationStartTime).msec();
-    }
-
-    inline uint32 getMSTimeDiff(uint32 oldMSTime, uint32 newMSTime)
-    {
-        // getMSTime() have limited data range and this is case when it overflow in this tick
-        if (oldMSTime > newMSTime)
-            return (0xFFFFFFFF - oldMSTime) + newMSTime;
-        else
-            return newMSTime - oldMSTime;
-    }
-
-    inline uint32 GetMSTimeDiffToNow(uint32 oldMSTime)
-    {
-        return getMSTimeDiff(oldMSTime, getMSTime());
     }
 }
 

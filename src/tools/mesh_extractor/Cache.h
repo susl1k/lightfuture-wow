@@ -2,9 +2,8 @@
 #define CACHE_H
 #include <string>
 #include <map>
-#include "Define.h"
-#include <ace/Guard_T.h>
-#include <ace/Synch.h>
+#include "Common.h"
+#include "ace/Synch.h"
 
 class WorldModelRoot;
 class Model;

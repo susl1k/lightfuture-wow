@@ -77,7 +77,7 @@ size_t MPQFile::Read(void* dest, size_t bytes)
         return 0;
 
     size_t rpos = pointer + bytes;
-    if (rpos > size_t(size)) {
+    if (rpos > size) {
         bytes = size - pointer;
         eof = true;
     }
