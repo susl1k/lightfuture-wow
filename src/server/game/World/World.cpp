@@ -1956,7 +1956,10 @@ void World::Update(uint32 diff)
     }
 
     if (m_gameTime > m_NextWeeklyQuestReset)
+	{
         ResetWeeklyQuests();
+		sArenaTeamMgr->DistributeArenaPoints();
+	}
 
     if (m_gameTime > m_NextRandomBGReset)
         ResetRandomBG();
@@ -2824,6 +2827,8 @@ void World::ResetWeeklyQuests()
 
     // change available weeklies
     sPoolMgr->ChangeWeeklyQuests();
+	sWorld->setWorldState(WS_ICC_WEEKLY_10, urand(1, 5));
+	sWorld->setWorldState(WS_ICC_WEEKLY_25, urand(1, 5));
 }
 
 void World::ResetEventSeasonalQuests(uint16 event_id)

@@ -478,6 +478,8 @@ enum WorldStates
     WS_WEEKLY_QUEST_RESET_TIME = 20002,                      // Next weekly reset time
     WS_BG_DAILY_RESET_TIME     = 20003,                      // Next daily BG reset time
 	BREWFEST_MONTH             = 50000,
+	WS_ICC_WEEKLY_10		   = 50001,
+	WS_ICC_WEEKLY_25		   = 50002,
 };
 
 // DB scripting commands
