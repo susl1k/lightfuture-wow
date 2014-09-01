@@ -2,11 +2,11 @@
 #define CACHE_H
 #include <string>
 #include <map>
-#include "Common.h"
-#include "ace/Synch.h"
-
-class WorldModelRoot;
-class Model;
+#include "Define.h"
+#include <ace/Guard_T.h>
+#include <ace/Synch.h>
+#include "WorldModelRoot.h"
+#include "Model.h"
 
 template<class K, class T>
 class GenericCache
@@ -14,7 +14,7 @@ class GenericCache
 public:
     GenericCache() {}
 
-    static const uint32 FlushLimit = 1000;
+    static const uint32 FlushLimit = 300; // We can't get too close to filling up all the memory, and we have to be wary of the maximum number of open streams.
 
     void Insert(K key, T* val)
     {
@@ -54,7 +54,8 @@ public:
 
     void Clear()
     {
-
+        ModelCache.Clear();
+        WorldModelCache.Clear();
     }
 };
 

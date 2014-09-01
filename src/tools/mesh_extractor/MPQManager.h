@@ -2,7 +2,9 @@
 #define MPQ_MANAGER_H
 
 #include "MPQ.h"
-#include "ace/Synch.h"
+#include <ace/Synch.h>
+#include <set>
+#include <map>
 
 class DBC;
 class MPQManager
@@ -12,9 +14,9 @@ public:
     ~MPQManager() {}
 
     void Initialize();
-    FILE* GetFile(std::string path);
-    FILE* GetFileFrom(std::string path, MPQArchive* file);
-    DBC* GetDBC(std::string name);
+    FILE* GetFile(const std::string& path);
+    FILE* GetFileFrom(const std::string& path, MPQArchive* file);
+    DBC* GetDBC(const std::string& name);
     std::vector<std::string> GetAllFiles(std::string extension);
 
     std::deque<MPQArchive*> Archives;
@@ -22,8 +24,8 @@ public:
     std::set<uint32> AvailableLocales;
     std::map<uint32, MPQArchive*> LocaleFiles;
 
-    static char* Files[];
-    static char* Languages[];
+    static char const* Files[];
+    static char const* Languages[];
 protected:
     void InitializeDBC();
 private:

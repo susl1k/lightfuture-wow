@@ -3,7 +3,7 @@
 #include "Chunk.h"
 #include "Utils.h"
 
-WorldModelGroup::WorldModelGroup( std::string path, int groupIndex ) : GroupIndex(groupIndex), MOBA(NULL), IsBad(false)
+WorldModelGroup::WorldModelGroup( std::string path, int groupIndex ) : GroupIndex(groupIndex), MOBA(NULL), IsBad(false), HasLiquidData(false)
 {
     Data = new ChunkedData(path);
     if (!Data->Stream)
@@ -137,7 +137,7 @@ void WorldModelGroup::ReadBatches()
 
     MOBALength = chunk->Length / 2;
     MOBA = new uint16[MOBALength];
-    int count = fread(MOBA, sizeof(uint16), MOBALength, chunk->GetStream());
+    uint32 count = (uint32)fread(MOBA, sizeof(uint16), MOBALength, chunk->GetStream());
     if (count != MOBALength)
-        printf("WorldModelGroup::ReadBatches: Error reading data, expected %d, read %d\n", MOBALength, count);
+        printf("WorldModelGroup::ReadBatches: Error reading data, expected %u, read %u\n", MOBALength, count);
 }

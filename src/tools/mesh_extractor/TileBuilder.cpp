@@ -1,6 +1,7 @@
 #include "ContinentBuilder.h"
 #include "TileBuilder.h"
 #include "Geometry.h"
+#include "WorldModelRoot.h"
 #include "Constants.h"
 #include "Utils.h"
 #include "Cache.h"
@@ -10,10 +11,10 @@
 #include "RecastAlloc.h"
 #include "DetourNavMeshBuilder.h"
 
-#include "ace/Synch.h"
+#include <ace/Synch.h>
 
 TileBuilder::TileBuilder(ContinentBuilder* _cBuilder, std::string world, int x, int y, uint32 mapId) :
-    World(world), X(x), Y(y), MapId(mapId), _Geometry(NULL), DataSize(0), cBuilder(_cBuilder)
+    World(world), X(x), Y(y), MapId(mapId), _Geometry(NULL), DataSize(0), cBuilder(_cBuilder), pmesh(NULL), dmesh(NULL)
 {
     /*
         Test, non-working values
@@ -60,6 +61,22 @@ TileBuilder::TileBuilder(ContinentBuilder* _cBuilder, std::string world, int x, 
     Config.detailSampleDist = Config.cs * 64;
     Config.detailSampleMaxError = Config.ch * 2;
 
+    memset(&InstanceConfig, 0, sizeof(rcConfig));
+    InstanceConfig.cs = 0.2f;
+    InstanceConfig.ch = 0.3f;
+    InstanceConfig.minRegionArea = 25;
+    InstanceConfig.mergeRegionArea = 100;
+    InstanceConfig.walkableSlopeAngle = 50.0f;
+    InstanceConfig.detailSampleDist = 3.0f;
+    InstanceConfig.detailSampleMaxError = 1.5f;
+    InstanceConfig.walkableClimb = 1.0f / InstanceConfig.ch;
+    InstanceConfig.walkableHeight = 2.1f / InstanceConfig.ch;
+    InstanceConfig.walkableRadius = 0.6f / InstanceConfig.cs;
+    InstanceConfig.maxEdgeLen = 8 * InstanceConfig.walkableRadius;
+    InstanceConfig.maxVertsPerPoly = 6;
+    InstanceConfig.maxSimplificationError = 1.25f;
+    InstanceConfig.borderSize = 0;
+
     Context = new rcContext;
 }
 
@@ -73,11 +90,164 @@ void TileBuilder::CalculateTileBounds( float*& bmin, float*& bmax, dtNavMeshPara
     bmax[2] = Constants::Origin[2] /*navMeshParams.orig[2]*/ + (Constants::TileSize * (Y + 1));
 }
 
-uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
+void TileBuilder::AddGeometry(WorldModelRoot* root, const WorldModelDefinition& def)
 {
     _Geometry = new Geometry();
     _Geometry->Transform = true;
-    ADT* adt = new ADT(Utils::GetAdtPath(World, X, Y));
+
+    WorldModelHandler::InsertModelGeometry(_Geometry->Vertices, _Geometry->Triangles, def, root, false);
+
+    if (Constants::Debug)
+    {
+        char buff[100];
+        sprintf(buff, "mmaps/%s_%02u%02u.obj", World.c_str(), Y, X);
+        FILE* debug = fopen(buff, "wb");
+        for (uint32 i = 0; i < _Geometry->Vertices.size(); ++i)
+        {
+            const Vector3& vector = _Geometry->Vertices[i];
+            fprintf(debug, "v %f %f %f\n", vector.x, vector.y, vector.z);
+        }
+        for (uint32 i = 0; i < _Geometry->Triangles.size(); ++i)
+        {
+            const Triangle<uint32>& triangle = _Geometry->Triangles[i];
+            fprintf(debug, "f %u %u %u\n", triangle.V0 + 1, triangle.V1 + 1, triangle.V2 + 1);
+        }
+        fclose(debug);
+    }
+}
+
+void TileBuilder::SetCoords(int x, int y)
+{
+    X = x;
+    Y = y;
+}
+
+void TileBuilder::PrepareInstanceMesh(float*& bmin, float*& bmax)
+{
+    _Geometry->CalculateBoundingBox(bmin, bmax);
+    rcVcopy(InstanceConfig.bmax, bmax);
+    rcVcopy(InstanceConfig.bmin, bmin);
+
+    if (pmesh && dmesh)
+        return;
+
+    uint32 numVerts = _Geometry->Vertices.size();
+    uint32 numTris = _Geometry->Triangles.size();
+    float* vertices;
+    int* triangles;
+    uint8* areas;
+    _Geometry->GetRawData(vertices, triangles, areas);
+
+    // this sets the dimensions of the heightfield - should maybe happen before border padding
+    rcCalcGridSize(InstanceConfig.bmin, InstanceConfig.bmax, InstanceConfig.cs, &InstanceConfig.width, &InstanceConfig.height);
+    rcHeightfield* hf = rcAllocHeightfield();
+    rcCreateHeightfield(Context, *hf, InstanceConfig.width, InstanceConfig.height, InstanceConfig.bmin, InstanceConfig.bmax, InstanceConfig.cs, InstanceConfig.ch);
+
+    rcClearUnwalkableTriangles(Context, InstanceConfig.walkableSlopeAngle, vertices, numVerts, triangles, numTris, areas);
+    rcRasterizeTriangles(Context, vertices, numVerts, triangles, areas, numTris, *hf, InstanceConfig.walkableClimb);
+
+    rcFilterLowHangingWalkableObstacles(Context, InstanceConfig.walkableClimb, *hf);
+    rcFilterLedgeSpans(Context, InstanceConfig.walkableHeight, InstanceConfig.walkableClimb, *hf);
+    rcFilterWalkableLowHeightSpans(Context, InstanceConfig.walkableHeight, *hf);
+
+    rcCompactHeightfield* chf = rcAllocCompactHeightfield();
+    rcBuildCompactHeightfield(Context, InstanceConfig.walkableHeight, InstanceConfig.walkableClimb, *hf, *chf);
+
+    rcErodeWalkableArea(Context, InstanceConfig.walkableRadius, *chf);
+    rcBuildDistanceField(Context, *chf);
+    rcBuildRegions(Context, *chf, InstanceConfig.borderSize, InstanceConfig.minRegionArea, InstanceConfig.minRegionArea);
+
+    rcContourSet* contours = rcAllocContourSet();
+    rcBuildContours(Context, *chf, InstanceConfig.maxSimplificationError, InstanceConfig.maxEdgeLen, *contours);
+
+    pmesh = rcAllocPolyMesh();
+    rcBuildPolyMesh(Context, *contours, InstanceConfig.maxVertsPerPoly, *pmesh);
+
+    dmesh = rcAllocPolyMeshDetail();
+    rcBuildPolyMeshDetail(Context, *pmesh, *chf, InstanceConfig.detailSampleDist, InstanceConfig.detailSampleMaxError, *dmesh);
+
+    // Set flags according to area types (e.g. Swim for Water)
+    for (int i = 0; i < pmesh->npolys; i++)
+    {
+        if (pmesh->areas[i] == Constants::POLY_AREA_ROAD || pmesh->areas[i] == Constants::POLY_AREA_TERRAIN)
+            pmesh->flags[i] = Constants::POLY_FLAG_WALK;
+        else if (pmesh->areas[i] == Constants::POLY_AREA_WATER)
+            pmesh->flags[i] = Constants::POLY_FLAG_SWIM;
+    }
+}
+
+uint8* TileBuilder::BuildInstance( dtNavMeshParams& navMeshParams )
+{
+    float* bmin = NULL, *bmax = NULL;
+
+    PrepareInstanceMesh(bmin, bmax);
+
+    dtNavMeshCreateParams params;
+    memset(&params, 0, sizeof(params));
+    // PolyMesh data
+    params.verts = pmesh->verts;
+    params.vertCount = pmesh->nverts;
+    params.polys = pmesh->polys;
+    params.polyAreas = pmesh->areas;
+    params.polyFlags = pmesh->flags;
+    params.polyCount = pmesh->npolys;
+    params.nvp = pmesh->nvp;
+    // PolyMeshDetail data
+    params.detailMeshes = dmesh->meshes;
+    params.detailVerts = dmesh->verts;
+    params.detailVertsCount = dmesh->nverts;
+    params.detailTris = dmesh->tris;
+    params.detailTriCount = dmesh->ntris;
+    rcVcopy(params.bmin, pmesh->bmin);
+    rcVcopy(params.bmax, pmesh->bmax);
+    // General settings
+    params.ch = InstanceConfig.ch;
+    params.cs = InstanceConfig.cs;
+    params.walkableClimb = InstanceConfig.walkableClimb * InstanceConfig.ch;
+    params.walkableHeight = InstanceConfig.walkableHeight * InstanceConfig.ch;
+    params.walkableRadius = InstanceConfig.walkableRadius * InstanceConfig.cs;
+    params.tileX = X;
+    params.tileY = Y;
+    params.tileLayer = 0;
+    params.buildBvTree = true;
+
+    rcVcopy(params.bmax, bmax);
+    rcVcopy(params.bmin, bmin);
+
+    // Offmesh-connection settings
+    params.offMeshConCount = 0; // none for now
+
+    //params.tileSize = Constants::VertexPerMap;
+
+    if (!params.polyCount || !params.polys || Constants::TilesPerMap * Constants::TilesPerMap == params.polyCount)
+    {
+        // we have flat tiles with no actual geometry - don't build those, its useless
+        // keep in mind that we do output those into debug info
+        // drop tiles with only exact count - some tiles may have geometry while having less tiles
+        printf("No polygons to build on tile, skipping.\n");
+        return NULL;
+    }
+
+    int navDataSize;
+    uint8* navData;
+    printf("Creating the navmesh with %i vertices, %i polys, %i triangles!\n", pmesh->nverts, pmesh->npolys, dmesh->ntris);
+    bool result = dtCreateNavMeshData(&params, &navData, &navDataSize);
+
+    if (result)
+    {
+        printf("NavMesh created, size %i!\n", navDataSize);
+        DataSize = navDataSize;
+        return navData;
+    }
+
+    return NULL;
+}
+
+uint8* TileBuilder::Build(dtNavMeshParams& navMeshParams)
+{
+    _Geometry = new Geometry();
+    _Geometry->Transform = true;
+    ADT* adt = new ADT(Utils::GetAdtPath(World, X, Y), X, Y);
     adt->Read();
     _Geometry->AddAdt(adt);
     delete adt;
@@ -94,8 +264,8 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
             if (tx == X && ty == Y)
                 continue;
 
-            ADT* _adt = new ADT(Utils::GetAdtPath(World, tx, ty));
-            // If this condition is met, it means that this wdt does not contain the ADT
+            ADT* _adt = new ADT(Utils::GetAdtPath(World, tx, ty), tx, ty);
+            // If this condition is met, it means that this WDT does not contain the ADT
             if (!_adt->Data->Stream)
             {
                 delete _adt;
@@ -107,15 +277,21 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
         }
     }
 
-    if (dbg)
+    if (Constants::Debug)
     {
         char buff[100];
         sprintf(buff, "mmaps/%s_%02u%02u.obj", World.c_str(), Y, X);
         FILE* debug = fopen(buff, "wb");
         for (uint32 i = 0; i < _Geometry->Vertices.size(); ++i)
-            fprintf(debug, "v %f %f %f\n", _Geometry->Vertices[i].x, _Geometry->Vertices[i].y, _Geometry->Vertices[i].z);
+        {
+            const Vector3& vector = _Geometry->Vertices[i];
+            fprintf(debug, "v %f %f %f\n", vector.x, vector.y, vector.z);
+        }
         for (uint32 i = 0; i < _Geometry->Triangles.size(); ++i)
-            fprintf(debug, "f %i %i %i\n", _Geometry->Triangles[i].V0 + 1, _Geometry->Triangles[i].V1 + 1, _Geometry->Triangles[i].V2 + 1);
+        {
+            const Triangle<uint32>& triangle = _Geometry->Triangles[i];
+            fprintf(debug, "f %u %u %u\n", triangle.V0 + 1, triangle.V1 + 1, triangle.V2 + 1);
+        }
         fclose(debug);
     }
     
@@ -128,13 +304,13 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
     _Geometry->Vertices.clear();
     _Geometry->Triangles.clear();
 
-    
+
     rcVcopy(Config.bmin, cBuilder->bmin);
     rcVcopy(Config.bmax, cBuilder->bmax);
-    
+
     // this sets the dimensions of the heightfield - should maybe happen before border padding
     rcCalcGridSize(Config.bmin, Config.bmax, Config.cs, &Config.width, &Config.height);
-    
+
     // Initialize per tile config.
     rcConfig tileCfg = Config;
     tileCfg.width = Config.tileSize + Config.borderSize * 2;
@@ -154,8 +330,8 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
             tileCfg.bmin[2] = Config.bmin[2] + float(y * Config.tileSize - Config.borderSize) * Config.cs;
             tileCfg.bmax[0] = Config.bmin[0] + float((x + 1) * Config.tileSize + Config.borderSize) * Config.cs;
             tileCfg.bmax[2] = Config.bmin[2] + float((y + 1) * Config.tileSize + Config.borderSize) * Config.cs;
-            
-            
+
+
             rcHeightfield* hf = rcAllocHeightfield();
             rcCreateHeightfield(Context, *hf, tileCfg.width, tileCfg.height, tileCfg.bmin, tileCfg.bmax, tileCfg.cs, tileCfg.ch);
             rcClearUnwalkableTriangles(Context, tileCfg.walkableSlopeAngle, vertices, numVerts, triangles, numTris, areas);
@@ -198,7 +374,7 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
             // Free memory
             rcFreeCompactHeightfield(chf);
             rcFreeContourSet(cset);
-            
+
             pmmerge[nmerge] = pmesh;
             dmmerge[nmerge] = dmesh;
             ++nmerge;
@@ -207,22 +383,14 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
 
     rcPolyMesh* pmesh = rcAllocPolyMesh();
     rcMergePolyMeshes(Context, pmmerge, nmerge, *pmesh);
-    
+
     rcPolyMeshDetail* dmesh = rcAllocPolyMeshDetail();
     rcMergePolyMeshDetails(Context, dmmerge, nmerge, *dmesh);
-    
+
     delete[] pmmerge;
     delete[] dmmerge;
-    
+
     printf("[%02i,%02i] Meshes merged!\n", X, Y);
-    
-    // Remove padding from the polymesh data. (Remove this odditity)
-    for (int i = 0; i < pmesh->nverts; ++i)
-    {
-        unsigned short* v = &pmesh->verts[i * 3];
-        v[0] -= (unsigned short)Config.borderSize;
-        v[2] -= (unsigned short)Config.borderSize;
-    }
 
     // Set flags according to area types (e.g. Swim for Water)
     for (int i = 0; i < pmesh->npolys; i++)
@@ -262,11 +430,11 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
 
     rcVcopy(params.bmin, cBuilder->bmin);
     rcVcopy(params.bmax, cBuilder->bmax);
-        
+
     // Offmesh-connection settings
     params.offMeshConCount = 0; // none for now
-    
-    params.tileSize = Constants::VertexPerMap;
+
+    //params.tileSize = Constants::VertexPerMap;
 
     if (!params.polyCount || !params.polys || Constants::TilesPerMap * Constants::TilesPerMap == params.polyCount)
     {
@@ -281,7 +449,7 @@ uint8* TileBuilder::Build(bool dbg, dtNavMeshParams& navMeshParams)
         delete vertices;
         return NULL;
     }
-    
+
     int navDataSize;
     uint8* navData;
     printf("[%02i,%02i] Creating the navmesh with %i vertices, %i polys, %i triangles!\n", X, Y, pmesh->nverts, pmesh->npolys, dmesh->ntris);

@@ -4,6 +4,7 @@
 #include "Recast.h"
 
 #include "Geometry.h"
+#include "WorldModelRoot.h"
 
 class ContinentBuilder;
 class WDT;
@@ -15,16 +16,22 @@ public:
     ~TileBuilder();
 
     void CalculateTileBounds(float*& bmin, float*& bmax, dtNavMeshParams& navMeshParams);
-    uint8* Build(bool dbg, dtNavMeshParams& navMeshParams);
-
+    uint8* Build(dtNavMeshParams& navMeshParams);
+    uint8* BuildInstance(dtNavMeshParams& navMeshParams);
+    void AddGeometry(WorldModelRoot* root, const WorldModelDefinition& def);
+    void SetCoords(int x, int y);
+    void PrepareInstanceMesh(float*& bmin, float*& bmax);
     std::string World;
     int X;
     int Y;
     int MapId;
     rcConfig Config;
+    rcConfig InstanceConfig;
     rcContext* Context;
     Geometry* _Geometry;
     uint32 DataSize;
     ContinentBuilder* cBuilder;
+    rcPolyMesh* pmesh;
+    rcPolyMeshDetail* dmesh;
 };
 #endif

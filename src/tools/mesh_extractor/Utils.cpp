@@ -21,6 +21,7 @@ const float Constants::PI = 3.1415926f;
 const float Constants::MaxStandableHeight = 1.5f;
 const char* Constants::VMAPMagic =  "VMAP041";
 bool Constants::ToWoWCoords = false;
+bool Constants::Debug = false;
 const float Constants::BaseUnitDim = 0.533333f;
 const int Constants::VertexPerMap = (Constants::TileSize / Constants::BaseUnitDim) + 0.5f;
 const int Constants::VertexPerTile = 40;
@@ -49,13 +50,12 @@ void Utils::Reverse(char word[])
 std::string Utils::ReadString( FILE* file )
 {
     std::string ret;
-    int i = 0;
     while (true)
     {
         char b;
         if (fread(&b, sizeof(char), 1, file) != 1 || b == 0)
             break;
-        ret[i++] = b;
+        ret.push_back(b);
     }
     return ret;
 }
@@ -72,69 +72,47 @@ uint32 Utils::Size( FILE* file )
     return size;
 }
 
-Vector3 Utils::ToRecast( Vector3 val )
+Vector3 Utils::ToRecast(const Vector3& val )
 {
     return Vector3(-val.y, val.z, -val.x);
 }
 
-std::string Utils::GetAdtPath( std::string world, int x, int y )
+std::string Utils::GetAdtPath(const std::string& world, int x, int y )
 {
     return "World\\Maps\\" + world + "\\" + world + "_" + Utils::ToString(x) + "_" + Utils::ToString(y) + ".adt";
 }
 
-std::string Utils::FixModelPath( std::string path )
+std::string Utils::FixModelPath(const std::string& path )
 {
     return Utils::GetPathBase(path) + ".M2";
 }
 
-G3D::Matrix4 Utils::RotationX(float angle)
+Vector3 Utils::TransformDoodadVertex(const IDefinition& def, Vector3& vec, bool translate)
 {
-    float _cos = cos(angle);
-    float _sin = sin(angle);
-    G3D::Matrix4 ret = G3D::Matrix4::identity();
-    ret[2][2] = _cos;
-    ret[2][3] = _sin;
-    ret[3][2] = -_sin;
-    ret[3][3] = _cos;
+    // Sources of information:
+    /// http://www.pxr.dk/wowdev/wiki/index.php?title=ADT/v18&oldid=3715
+
+    // This function applies to both external doodads and WMOs
+
+    // Rotate our Doodad vertex
+    G3D::Matrix4 rot = G3D::Matrix3::fromEulerAnglesXYZ(Utils::ToRadians(def.Rotation.z), Utils::ToRadians(-def.Rotation.x), Utils::ToRadians(def.Rotation.y + 180));
+    Vector3 ret = Utils::VectorTransform(vec, rot);
+
+    // And finally scale and translate it to our origin
+    ret = ret * def.Scale();
+    if (translate)
+        ret = ret + Vector3(Constants::MaxXY - def.Position.z, Constants::MaxXY - def.Position.x, def.Position.y);
     return ret;
 }
 
-G3D::Matrix4 Utils::GetTransformation(IDefinition def)
+Vector3 Utils::TransformWmoDoodad(const DoodadInstance& inst, const WorldModelDefinition& root, Vector3& vec, bool translate )
 {
-    G3D::Matrix4 translation;
-    if (def.Position.x == 0.0f && def.Position.y == 0.0f && def.Position.z == 0.0f)
-        translation = G3D::Matrix4::identity();
-    else
-        translation = G3D::Matrix4::translation(-(def.Position.z - Constants::MaxXY),
-            -(def.Position.x - Constants::MaxXY), def.Position.y);
+    G3D::Quat quat = G3D::Quat(-inst.QuatY, inst.QuatZ, -inst.QuatX, inst.QuatW);
 
-    G3D::Matrix4 rotation = RotationX(ToRadians(def.Rotation.z)) * RotationY(ToRadians(def.Rotation.x)) * RotationZ(ToRadians(def.Rotation.y + 180));
-    if (def.Scale() < 1.0f || def.Scale() > 1.0f)
-        return G3D::Matrix4::scale(def.Scale()) * rotation * translation;
-    return rotation * translation;
-}
-
-G3D::Matrix4 Utils::RotationY( float angle )
-{
-    float _cos = cos(angle);
-    float _sin = sin(angle);
-    G3D::Matrix4 ret = G3D::Matrix4::identity();
-    ret[1][1] = _cos;
-    ret[1][3] = -_sin;
-    ret[3][1] = _sin;
-    ret[3][3] = _cos;
-    return ret;
-}
-
-G3D::Matrix4 Utils::RotationZ( float angle )
-{
-    float _cos = cos(angle);
-    float _sin = sin(angle);
-    G3D::Matrix4 ret = G3D::Matrix4::identity();
-    ret[1][1] = _cos;
-    ret[1][2] = _sin;
-    ret[2][1] = -_sin;
-    ret[2][2] = _cos;
+    Vector3 ret = Utils::VectorTransform(vec, G3D::Matrix4(quat.toRotationMatrix()));
+    ret = ret * (inst.Scale / 1024.0f);
+    if (translate)
+        ret = ret + Vector3(Constants::MaxXY - inst.Position.z, Constants::MaxXY - inst.Position.x, inst.Position.y);
     return ret;
 }
 
@@ -143,16 +121,14 @@ float Utils::ToRadians( float degrees )
     return Constants::PI * degrees / 180.0f;
 }
 
-Vector3 Utils::VectorTransform( Vector3 vec, G3D::Matrix4 matrix )
+Vector3 Utils::VectorTransform(const Vector3& vec, const G3D::Matrix4& matrix, bool normal )
 {
-    Vector3 ret;
-    ret.x = vec.x * matrix[1][1] + vec.y * matrix[2][1] + vec.z * matrix[3][1] + matrix[4][1];
-    ret.y = vec.x * matrix[1][2] + vec.y * matrix[2][2] + vec.z * matrix[3][2] + matrix[4][2];
-    ret.z = vec.x * matrix[1][3] + vec.y * matrix[2][3] + vec.z * matrix[3][3] + matrix[4][3];
-    return ret;
+    G3D::Vector3 ret(vec.x, vec.y, vec.z);
+    ret = matrix.homoMul(ret, normal ? 0 : 1);
+    return Vector3(ret.x, ret.y, ret.z);
 }
 
-std::string Utils::GetPathBase( std::string path )
+std::string Utils::GetPathBase(const std::string& path )
 {
     size_t lastIndex = path.find_last_of(".");
     if (lastIndex != std::string::npos)
@@ -168,11 +144,11 @@ Vector3 Vector3::Read( FILE* file )
     return ret;
 }
 
-Vector3 Utils::GetLiquidVert(G3D::Matrix4 transformation, Vector3 basePosition, float height, int /*x*/, int /*y*/)
+Vector3 Utils::GetLiquidVert(const IDefinition& def, Vector3 basePosition, float height, int x, int y, bool translate)
 {
     if (Utils::Distance(height, 0.0f) > 0.5f)
         basePosition.z = 0.0f;
-    return Utils::VectorTransform(basePosition + Vector3(basePosition.x * Constants::UnitSize, basePosition.y * Constants::UnitSize, height), transformation);
+    return Utils::TransformDoodadVertex(def, basePosition + Vector3(x * Constants::UnitSize, y * Constants::UnitSize, height), translate);
 }
 
 float Utils::Distance( float x, float y )
@@ -191,19 +167,7 @@ std::string Utils::Replace( std::string str, const std::string& oldStr, const st
     return str;
 }
 
-G3D::Matrix4 Utils::GetWmoDoodadTransformation( DoodadInstance inst, WorldModelDefinition root )
-{
-    G3D::Matrix4 rootTransformation = Utils::GetTransformation(root);
-    G3D::Matrix4 translation = G3D::Matrix4::translation(inst.Position.x, inst.Position.y, inst.Position.z);
-    G3D::Matrix4 scale = G3D::Matrix4::scale(inst.Scale);
-    G3D::Matrix4 rotation = Utils::RotationY(Constants::PI);
-    G3D::Quat quat(-inst.QuatY, inst.QuatZ, -inst.QuatX, inst.QuatW);
-    G3D::Matrix4 quatRotation = quat.toRotationMatrix();
-
-    return scale * rotation * quatRotation ** translation * rootTransformation;
-}
-
-void Utils::SaveToDisk( FILE* stream, std::string path )
+void Utils::SaveToDisk( FILE* stream, const std::string& path )
 {
     FILE* disk = fopen(path.c_str(), "wb");
     if (!disk)
@@ -218,7 +182,7 @@ void Utils::SaveToDisk( FILE* stream, std::string path )
     if (fread(data, 1, size, stream) != 1)
     {
         printf("SaveToDisk: Error reading from Stream while trying to save file %s to disck.\n", path.c_str());
-        return;        
+        return;
     }
     // And write it in the file
     fwrite(data, 1, size, disk);
@@ -226,12 +190,12 @@ void Utils::SaveToDisk( FILE* stream, std::string path )
     // Close the filestream
     fclose(disk);
     // Free the used memory
-    delete data;
+    delete [] data;
 }
 
-Vector3 Utils::ToWoWCoords( Vector3 vec )
+Vector3 Utils::ToWoWCoords(const Vector3& vec )
 {
-    return Vector3(vec.x, -vec.z, vec.y);
+    return Vector3(-vec.z, -vec.x, vec.y);
 }
 
 std::string Utils::GetExtension( std::string path )
@@ -274,7 +238,7 @@ void MapChunkHeader::Read(FILE* stream)
     count += fread(&SizeMCLQ, sizeof(uint32), 1, stream);
     Position = Vector3::Read(stream);
     count += fread(&OffsetMCCV, sizeof(uint32), 1, stream);
-    
+
     if (count != 27)
          printf("MapChunkHeader::Read: Failed to read some data expected 27, read %d\n", count);
 }
@@ -295,7 +259,7 @@ void MHDR::Read(FILE* stream)
     count += fread(&OffsetMFBO, sizeof(uint32), 1, stream);
     count += fread(&OffsetMH2O, sizeof(uint32), 1, stream);
     count += fread(&OffsetMTFX, sizeof(uint32), 1, stream);
-    
+
     if (count != 12)
          printf("MHDR::Read: Failed to read some data expected 12, read %d\n", count);
 }
@@ -357,7 +321,7 @@ void ModelHeader::Read(FILE* stream)
     count += fread(&OffsetBoundingVertices, sizeof(uint32), 1, stream);
     count += fread(&CountBoundingNormals, sizeof(uint32), 1, stream);
     count += fread(&OffsetBoundingNormals, sizeof(uint32), 1, stream);
-    
+
     if (count != 51)
          printf("ModelHeader::Read: Failed to read some data expected 51, read %d\n", count);
 
@@ -380,7 +344,7 @@ WorldModelHeader WorldModelHeader::Read(FILE* stream)
     ret.BoundingBox[0] = Vector3::Read(stream);
     ret.BoundingBox[1] = Vector3::Read(stream);
     count += fread(&ret.LiquidTypeRelated, sizeof(uint32), 1, stream);
-    
+
     if (count != 10)
          printf("WorldModelHeader::Read: Failed to read some data expected 10, read %d\n", count);
 
@@ -400,7 +364,7 @@ DoodadInstance DoodadInstance::Read(FILE* stream)
     count += fread(&ret.QuatZ, sizeof(float), 1, stream);
     count += fread(&ret.Scale, sizeof(float), 1, stream);
     count += fread(&ret.LightColor, sizeof(uint32), 1, stream);
-    
+
     if (count != 7)
          printf("DoodadInstance::Read: Failed to read some data expected 7, read %d\n", count);
 
@@ -484,7 +448,8 @@ LiquidData LiquidData::Read(FILE* stream, LiquidHeader& header)
 H2ORenderMask H2ORenderMask::Read(FILE* stream)
 {
     H2ORenderMask ret;
-    if (int count = fread(&ret.Mask, sizeof(uint8), 8, stream) != 8)
+    int32 count;
+    if ((count = fread(&ret.Mask, sizeof(uint8), 8, stream)) != 8)
         printf("H2OHeader::Read: Failed to read some data expected 8, read %d\n", count);
     return ret;
 }

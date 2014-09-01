@@ -2,10 +2,9 @@
 #include "MPQ.h"
 #include "DBC.h"
 #include "Utils.h"
+#include <ace/Guard_T.h>
 
-#include "ace/Synch.h"
-
-char* MPQManager::Files[] = {
+char const* MPQManager::Files[] = {
     "common.MPQ",
     "common-2.MPQ",
     "expansion.MPQ",
@@ -15,7 +14,7 @@ char* MPQManager::Files[] = {
     "patch-3.MPQ"
 };
 
-char* MPQManager::Languages[] = { "enGB", "enUS", "deDE", "esES", "frFR", "koKR", "zhCN", "zhTW", "enCN", "enTW", "esMX", "ruRU" };
+char const* MPQManager::Languages[] = { "enGB", "enUS", "deDE", "esES", "frFR", "koKR", "zhCN", "zhTW", "enCN", "enTW", "esMX", "ruRU" };
 
 void MPQManager::Initialize()
 {
@@ -58,14 +57,14 @@ void MPQManager::InitializeDBC()
     Archives.push_front(_baseLocale);
     if (BaseLocale == -1)
     {
-        printf("No locale data detected\n");
+        printf("No locale data detected. Please make sure that the executable is in the same folder as your WoW installation.\n");
         ASSERT(false);
     }
     else
         printf("Using default locale: %s\n", Languages[BaseLocale]);
 }
 
-FILE* MPQManager::GetFile( std::string path )
+FILE* MPQManager::GetFile(const std::string& path )
 {
     ACE_GUARD_RETURN(ACE_Thread_Mutex, g, mutex, NULL);
     MPQFile file(path.c_str());
@@ -74,13 +73,13 @@ FILE* MPQManager::GetFile( std::string path )
     return file.GetFileStream();
 }
 
-DBC* MPQManager::GetDBC( std::string name )
+DBC* MPQManager::GetDBC(const std::string& name )
 {
     std::string path = "DBFilesClient\\" + name + ".dbc";
     return new DBC(GetFile(path));
 }
 
-FILE* MPQManager::GetFileFrom( std::string path, MPQArchive* file )
+FILE* MPQManager::GetFileFrom(const std::string& path, MPQArchive* file )
 {
     ACE_GUARD_RETURN(ACE_Thread_Mutex, g, mutex, NULL);
     mpq_archive* mpq_a = file->mpq_a;
@@ -104,6 +103,11 @@ FILE* MPQManager::GetFileFrom( std::string path, MPQArchive* file )
 
     // Pack the return into a FILE stream
     FILE* ret = tmpfile();
+    if (!ret)
+    {
+        printf("Could not create temporary file. Please run as Administrator or root\n");
+        exit(1);
+    }
     fwrite(buffer, sizeof(uint8), size, ret);
     return ret;
 }
