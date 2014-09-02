@@ -3525,8 +3525,8 @@ enum CalendarError
 
 // Calendar - end
 
-#define MMAP_MAGIC 0x4d4d4150   // 'MMAP'
-#define MMAP_VERSION 3
+const uint32 MMAP_MAGIC = 0x4d4d4150; // 'MMAP'
+#define MMAP_VERSION 5
 
 struct MmapTileHeader
 {
