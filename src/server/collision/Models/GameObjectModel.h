@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2009 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ public:
     /**    Enables\disables collision. */
     void disable() { phasemask = 0;}
     void enable(uint32 ph_mask) { phasemask = ph_mask;}
+
+    bool isEnabled() const {return phasemask != 0;}
 
     bool intersectRay(const G3D::Ray& Ray, float& MaxDist, bool StopAtFirstHit, uint32 ph_mask) const;
 

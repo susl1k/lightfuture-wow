@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2013 TrinityCore <http://www.trinitycore.org/>
  * Copyright (C) 2005-2010 MaNGOS <http://getmangos.com/>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ namespace VMAP
     {
         VMAP_LOAD_RESULT_ERROR,
         VMAP_LOAD_RESULT_OK,
-        VMAP_LOAD_RESULT_IGNORED,
+        VMAP_LOAD_RESULT_IGNORED
     };
 
     #define VMAP_INVALID_HEIGHT       -100000.0f            // for check
