@@ -421,7 +421,7 @@ void MotionMaster::MoveCharge(float x, float y, float z, float speed, uint32 id,
 
 void MotionMaster::MoveCharge(PathGenerator path, float speed, uint32 id)
 {
-    Vector3 dest = path.GetActualEndPosition();
+    G3D::Vector3 dest = path.GetActualEndPosition();
 
     MoveCharge(dest.x, dest.y, dest.z);
 
@@ -597,7 +597,7 @@ void MotionMaster::MoveSmoothPath(uint32 id, const Position points[], uint32 poi
 {
 	Movement::PointsArray waypoints (pointsCount);
 	for (uint32 i = 0; i < pointsCount; i++)
-		waypoints[i] = Vector3(points[i].GetPositionX(), points[i].GetPositionY(), points[i].GetPositionZ());
+		waypoints[i] = G3D::Vector3(points[i].GetPositionX(), points[i].GetPositionY(), points[i].GetPositionZ());
 
 	MoveSmoothPath(id, waypoints, velocity, fly);
 }
@@ -608,7 +608,7 @@ void MotionMaster::MoveSmoothPath(uint32 id, uint32 npc_id, float velocity, bool
 
 	Movement::PointsArray waypoints (path.size());
 	for (uint32 i = 0; i < path.size(); i++)
-		waypoints[i] = Vector3(path.at(i).fX, path.at(i).fY, path.at(i).fZ);
+		waypoints[i] = G3D::Vector3(path.at(i).fX, path.at(i).fY, path.at(i).fZ);
 
 	MoveSmoothPath(id, waypoints, velocity, fly);
 }
