@@ -1,4 +1,4 @@
-// $Id: Connector.cpp 93433 2011-02-23 10:34:01Z vzykov $
+// $Id: Connector.cpp 91527 2010-08-27 15:03:31Z shuston $
 
 #ifndef ACE_CONNECTOR_CPP
 #define ACE_CONNECTOR_CPP
@@ -829,7 +829,7 @@ ACE_Strategy_Connector<SVC_HANDLER, ACE_PEER_CONNECTOR_2>::open
   else if (this->creation_strategy_ == 0)
     {
       ACE_NEW_RETURN (this->creation_strategy_,
-                      CREATION_STRATEGY (0, r),
+                      CREATION_STRATEGY,
                       -1);
       this->delete_creation_strategy_ = true;
     }
@@ -887,8 +887,7 @@ ACE_Strategy_Connector<SVC_HANDLER, ACE_PEER_CONNECTOR_2>::ACE_Strategy_Connecto
  ACE_Connect_Strategy<SVC_HANDLER, ACE_PEER_CONNECTOR_2> *conn_s,
  ACE_Concurrency_Strategy<SVC_HANDLER> *con_s,
  int flags)
-  : base_type (reactor),
-    creation_strategy_ (0),
+  : creation_strategy_ (0),
     delete_creation_strategy_ (false),
     connect_strategy_ (0),
     delete_connect_strategy_ (false),

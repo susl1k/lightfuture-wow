@@ -1,6 +1,6 @@
 // -*- C++ -*-
 //
-// $Id: Auto_Functor.inl 92386 2010-10-28 07:44:37Z johnnyw $
+// $Id: Auto_Functor.inl 80826 2008-03-04 14:51:23Z wotte $
 
 ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 
@@ -35,6 +35,7 @@ ACE_Utils::Auto_Functor<X,Functor>:: operator=(Auto_Functor & rhs)
   return *this;
 }
 
+#if !defined(ACE_LACKS_MEMBER_TEMPLATES)
 template<typename X, typename Functor> template<typename Y> ACE_INLINE
 ACE_Utils::Auto_Functor<X,Functor>::Auto_Functor(Auto_Functor<Y,Functor>& rhs)
   : p_(rhs.release())
@@ -49,6 +50,7 @@ ACE_Utils::Auto_Functor<X,Functor>::operator=(Auto_Functor<Y,Functor>& rhs)
   reset(rhs.release());
   return *this;
 }
+#endif /* ACE_LACKS_MEMBER_TEMPLATES */
 
 template<typename X, typename Functor> ACE_INLINE X &
 ACE_Utils::Auto_Functor<X,Functor>::operator*() const
@@ -105,6 +107,8 @@ ACE_Utils::Auto_Functor<X,Functor>::operator=(Auto_Functor_Ref<X,Functor> rhs)
   return *this;
 }
 
+#if !defined(ACE_LACKS_MEMBER_TEMPLATES)
+
 template<typename X, typename Functor> template<typename Y> ACE_INLINE
 ACE_Utils::Auto_Functor<X,Functor>::operator ACE_Utils::Auto_Functor_Ref<Y,Functor>()
 {
@@ -116,5 +120,15 @@ ACE_Utils::Auto_Functor<X,Functor>::operator ACE_Utils::Auto_Functor<Y,Functor>(
 {
   return ACE_Utils::Auto_Functor<Y,Functor>(release(), f_);
 }
+
+#else
+
+template<typename X, typename Functor>ACE_INLINE
+ACE_Utils::Auto_Functor<X,Functor>::operator ACE_Utils::Auto_Functor_Ref<X,Functor>()
+{
+  return ACE_Utils::Auto_Functor_Ref<X,Functor>(release(), f_);
+}
+
+#endif /* ACE_LACKS_MEMBER_TEMPLATES */
 
 ACE_END_VERSIONED_NAMESPACE_DECL

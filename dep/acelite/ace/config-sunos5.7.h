@@ -1,5 +1,5 @@
 /* -*- C++ -*- */
-// $Id: config-sunos5.7.h 93543 2011-03-14 08:25:46Z johnnyw $
+// $Id: config-sunos5.7.h 91581 2010-08-31 13:18:11Z shuston $
 
 // The following configuration file is designed to work for SunOS 5.7
 // (Solaris 7) platforms using the SunC++ 4.x, 5.x, or g++ compilers.
@@ -25,10 +25,17 @@
 // SunOS 5.7 has getloadavg()
 #undef ACE_LACKS_GETLOADAVG
 
-#if defined (__SUNPRO_CC) && (__SUNPRO_CC <= 0x530)
+#if defined (ghs)
+  // SunOS 5.7's /usr/include/sys/procfs_isa.h needs uint64_t,
+  // but /usr/include/sys/int_types.h doesn't #define it because
+  // _NO_LONGLONG is #
+# undef ACE_HAS_PROC_FS
+# undef ACE_HAS_PRUSAGE_T
+
+#elif defined (__SUNPRO_CC) && (__SUNPRO_CC <= 0x530)
   // Wide character methods are in std:: when using SunCC 5.3
 # define ACE_WCHAR_IN_STD_NAMESPACE
-#endif
+#endif /* __GNUG__ || ghs */
 
 // SunOS 5.7 supports SCHED_FIFO and SCHED_RR, as well as SCHED_OTHER.
 #undef ACE_HAS_ONLY_SCHED_OTHER

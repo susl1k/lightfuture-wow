@@ -1,5 +1,7 @@
 // -*- C++ -*-
-// $Id: Hashable.inl 93736 2011-04-05 12:38:35Z johnnyw $
+//
+// $Id: Hashable.inl 80826 2008-03-04 14:51:23Z wotte $
+
 
 ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 

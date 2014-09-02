@@ -1,4 +1,4 @@
-// $Id: Configuration.cpp 92828 2010-12-08 09:38:57Z mcorino $
+// $Id: Configuration.cpp 91688 2010-09-09 11:21:50Z johnnyw $
 #include "ace/Configuration.h"
 #include "ace/Auto_Ptr.h"
 #include "ace/SString.h"
@@ -1632,7 +1632,7 @@ ACE_Configuration_Heap::remove_section (const ACE_Configuration_Section_Key& key
 
   // Now remove subkey from parent key
   ACE_Configuration_ExtId SubSExtId (sub_section);
-  SUBSECTION_HASH::ENTRY* subsection_entry = 0;
+  SUBSECTION_HASH::ENTRY* subsection_entry;
   if (((SUBSECTION_HASH*)ParentIntId.section_hash_map_)->
       find (SubSExtId, subsection_entry))
     return -1;

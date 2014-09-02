@@ -1,4 +1,4 @@
-// $Id: WFMO_Reactor.cpp 95368 2011-12-19 13:38:49Z mcorino $
+// $Id: WFMO_Reactor.cpp 91286 2010-08-05 09:04:31Z johnnyw $
 
 #include "ace/WFMO_Reactor.h"
 
@@ -1153,8 +1153,6 @@ ACE_WFMO_Reactor::open (size_t size,
   // Timer Queue
   if (this->delete_timer_queue_)
     delete this->timer_queue_;
-  else if (this->timer_queue_)
-    this->timer_queue_->close ();
 
   if (tq == 0)
     {
@@ -1285,14 +1283,8 @@ ACE_WFMO_Reactor::timer_queue (void) const
 int
 ACE_WFMO_Reactor::timer_queue (ACE_Timer_Queue *tq)
 {
-  if (this->delete_timer_queue_)
-    {
-      delete this->timer_queue_;
-    }
-  else if (this->timer_queue_)
-    {
-      this->timer_queue_->close ();
-    }
+  if (this->timer_queue_ != 0 && this->delete_timer_queue_)
+    delete this->timer_queue_;
   this->timer_queue_ = tq;
   this->delete_timer_queue_ = false;
   return 0;
@@ -1333,11 +1325,6 @@ ACE_WFMO_Reactor::~ACE_WFMO_Reactor (void)
       delete this->timer_queue_;
       this->timer_queue_ = 0;
       this->delete_timer_queue_ = false;
-    }
-  else if (this->timer_queue_)
-    {
-      this->timer_queue_->close ();
-      this->timer_queue_ = 0;
     }
 
   if (this->delete_signal_handler_)
@@ -1696,10 +1683,7 @@ ACE_WFMO_Reactor::event_handling (ACE_Time_Value *max_wait_time,
 
   // Make sure we are not closed
   if (!this->open_for_business_ || this->deactivated_)
-    {
-      errno = ESHUTDOWN;
-      return -1;
-    }
+    return -1;
 
   // Stash the current time -- the destructor of this object will
   // automatically compute how much time elapsed since this method was
@@ -1968,6 +1952,7 @@ ACE_WFMO_Reactor::dispatch_handles (DWORD wait_status)
     {
       const bool ok = (
 #if ! defined(__BORLANDC__) \
+    && !defined (ghs) \
     && !defined (__MINGW32__) \
     && !defined (_MSC_VER)
                  // wait_status is unsigned in Borland, Green Hills,

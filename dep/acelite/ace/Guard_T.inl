@@ -1,5 +1,6 @@
 // -*- C++ -*-
-// $Id: Guard_T.inl 93736 2011-04-05 12:38:35Z johnnyw $
+//
+// $Id: Guard_T.inl 91626 2010-09-07 10:59:20Z johnnyw $
 
 // FUZZ: disable check_for_ACE_Guard
 

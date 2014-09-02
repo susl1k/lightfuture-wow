@@ -1,5 +1,6 @@
 // -*- C++ -*-
-// $Id: ATM_Stream.inl 92474 2010-11-02 13:29:39Z johnnyw $
+//
+// $Id: ATM_Stream.inl 84262 2009-01-29 10:34:33Z johnnyw $
 
 ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 

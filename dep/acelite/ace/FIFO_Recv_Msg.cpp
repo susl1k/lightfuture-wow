@@ -1,4 +1,4 @@
-// $Id: FIFO_Recv_Msg.cpp 93359 2011-02-11 11:33:12Z mcorino $
+// $Id: FIFO_Recv_Msg.cpp 91286 2010-08-05 09:04:31Z johnnyw $
 
 #include "ace/FIFO_Recv_Msg.h"
 
@@ -7,6 +7,8 @@
 #if !defined (__ACE_INLINE__)
 #include "ace/FIFO_Recv_Msg.inl"
 #endif /* __ACE_INLINE__ */
+
+
 
 ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 

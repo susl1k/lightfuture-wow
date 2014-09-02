@@ -1,4 +1,4 @@
-// $Id: Timeprobe_T.cpp 95743 2012-05-13 12:29:28Z johnnyw $
+// $Id: Timeprobe_T.cpp 80826 2008-03-04 14:51:23Z wotte $
 
 #ifndef ACE_TIMEPROBE_T_CPP
 #define ACE_TIMEPROBE_T_CPP
@@ -250,8 +250,7 @@ ACE_Timeprobe_Ex<ACE_LOCK, ALLOCATOR>::print_times (void)
               "thread",
               "usec"));
 
-  ACE_High_Res_Timer::global_scale_factor_type gsf =
-    ACE_High_Res_Timer::global_scale_factor ();
+  double gsf = ACE_High_Res_Timer::global_scale_factor ();
   u_long i, j;
 
   // First element

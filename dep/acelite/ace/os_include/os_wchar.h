@@ -6,7 +6,7 @@
  *
  *  wide-character handling
  *
- *  $Id: os_wchar.h 93117 2011-01-20 12:11:28Z mcorino $
+ *  $Id: os_wchar.h 83948 2008-12-02 13:55:34Z jtc $
  *
  *  @author Don Hinton <dhinton@dresystems.com>
  *  @author This code was originally in various places including ace/OS.h.
@@ -40,6 +40,14 @@
 extern "C"
 {
 #endif /* __cplusplus */
+
+#if defined (ACE_LACKS_WCSTOLL_PROTOTYPE)
+  long long wcstoll (const wchar_t *, wchar_t **, int);
+#endif /* ACE_LACKS_WCSTOLL_PROTOTYPE */
+
+#if defined (ACE_LACKS_WCSTOULL_PROTOTYPE)
+  unsigned long long wcstoull (const wchar_t *, wchar_t **, int);
+#endif /* ACE_LACKS_WCSTOULL_PROTOTYPE */
 
 #ifdef __cplusplus
 }

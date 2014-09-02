@@ -4,7 +4,7 @@
 /**
  *  @file    ace_wchar.h
  *
- *  $Id: ace_wchar.h 93597 2011-03-21 12:54:52Z johnnyw $
+ *  $Id: ace_wchar.h 91688 2010-09-09 11:21:50Z johnnyw $
  *
  *  @author Darrell Brunsch <brunsch@uci.edu>
  */
@@ -148,10 +148,10 @@ ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 class ACE_Wide_To_Ascii
 {
 public:
-  /// Constructor must take a wchar string.
+  /// Ctor must take a wchar string.
   ACE_Wide_To_Ascii (const wchar_t *s);
 
-  /// Destructor will free up the memory.
+  /// Dtor will free up the memory.
   ~ACE_Wide_To_Ascii (void);
 
   /// Return the internal char* representation.
@@ -186,10 +186,10 @@ private:
 class ACE_Ascii_To_Wide
 {
 public:
-  /// Constructor must take a wchar string.
+  /// Ctor must take a wchar string.
   ACE_Ascii_To_Wide (const char *s);
 
-  /// Destructor will free up the memory.
+  /// Dtor will free up the memory.
   ~ACE_Ascii_To_Wide (void);
 
   /// Return the internal wchar* representation.

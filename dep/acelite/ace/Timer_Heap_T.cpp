@@ -1,4 +1,4 @@
-// $Id: Timer_Heap_T.cpp 95630 2012-03-22 13:04:47Z johnnyw $
+// $Id: Timer_Heap_T.cpp 92069 2010-09-28 11:38:59Z johnnyw $
 
 #ifndef ACE_TIMER_HEAP_T_CPP
 #define ACE_TIMER_HEAP_T_CPP
@@ -39,34 +39,34 @@ ACE_HEAP_LCHILD (size_t X)
 
 // Constructor that takes in an <ACE_Timer_Heap_T> to iterate over.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::ACE_Timer_Heap_Iterator_T (
-  Heap & heap)
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::ACE_Timer_Heap_Iterator_T (
+  ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK> &heap)
   : timer_heap_ (heap)
 {
   ACE_TRACE ("ACE_Timer_Heap_Iterator_T::ACE_Timer_Heap_Iterator");
   this->first ();
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::~ACE_Timer_Heap_Iterator_T (void)
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::~ACE_Timer_Heap_Iterator_T (void)
 {
 }
 
 // Positions the iterator at the first node in the heap array
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::first (void)
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::first (void)
 {
   this->position_ = 0;
 }
 
 // Positions the iterator at the next node in the heap array
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::next (void)
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::next (void)
 {
   if (this->position_ != this->timer_heap_.cur_size_)
     ++this->position_;
@@ -74,16 +74,16 @@ ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::next (void)
 
 // Returns true the <position_> is at the end of the heap array
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY> bool
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::isdone (void) const
+template <class TYPE, class FUNCTOR, class ACE_LOCK> bool
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::isdone (void) const
 {
   return this->position_ == this->timer_heap_.cur_size_;
 }
 
 // Returns the node at the current position in the heap or 0 if at the end
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY> ACE_Timer_Node_T<TYPE> *
-ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::item (void)
+template <class TYPE, class FUNCTOR, class ACE_LOCK> ACE_Timer_Node_T<TYPE> *
+ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK>::item (void)
 {
   if (this->position_ != this->timer_heap_.cur_size_)
     return this->timer_heap_.heap_[this->position_];
@@ -95,16 +95,13 @@ ACE_Timer_Heap_Iterator_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::item (void)
 // Since timer IDs are assigned by first incrementing the timer_ids_curr_
 // value, the first ID assigned will be 1 (just as in the previous design).
 // When it's time to wrap, the next ID given out will be 0.
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::ACE_Timer_Heap_T (
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::ACE_Timer_Heap_T (
   size_t size,
   bool preallocated,
   FUNCTOR *upcall_functor,
-  ACE_Free_List<ACE_Timer_Node_T <TYPE> > *freelist,
-  TIME_POLICY const & time_policy)
-  : Base_Time_Policy (upcall_functor,
-      freelist,
-      time_policy),
+  ACE_Free_List<ACE_Timer_Node_T <TYPE> > *freelist)
+  : ACE_Timer_Queue_T<TYPE,FUNCTOR,ACE_LOCK> (upcall_functor, freelist),
     max_size_ (size),
     cur_size_ (0),
     cur_limbo_ (0),
@@ -165,14 +162,11 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::ACE_Timer_Heap_T (
 // Since timer IDs are assigned by first incrementing the timer_ids_curr_
 // value, the first ID assigned will be 1 (just as in the previous design).
 // When it's time to wrap, the next ID given out will be 0.
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::ACE_Timer_Heap_T (
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::ACE_Timer_Heap_T (
   FUNCTOR *upcall_functor,
-  ACE_Free_List<ACE_Timer_Node_T <TYPE> > *freelist,
-  TIME_POLICY const & time_policy)
-  : Base_Time_Policy (upcall_functor,
-          freelist,
-          time_policy),
+  ACE_Free_List<ACE_Timer_Node_T <TYPE> > *freelist)
+  : ACE_Timer_Queue_T<TYPE,FUNCTOR,ACE_LOCK> (upcall_functor, freelist),
     max_size_ (ACE_DEFAULT_TIMERS),
     cur_size_ (0),
     cur_limbo_ (0),
@@ -205,35 +199,12 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::ACE_Timer_Heap_T (
            HEAP_ITERATOR (*this));
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::~ACE_Timer_Heap_T (void)
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::~ACE_Timer_Heap_T (void)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::~ACE_Timer_Heap_T");
 
   delete iterator_;
-
-  this->close ();
-
-  delete [] this->heap_;
-  delete [] this->timer_ids_;
-
-  // clean up any preallocated timer nodes
-  if (preallocated_nodes_ != 0)
-    {
-      ACE_Unbounded_Set_Iterator<ACE_Timer_Node_T<TYPE> *>
-        set_iterator (this->preallocated_node_set_);
-
-      for (ACE_Timer_Node_T<TYPE> **entry = 0;
-           set_iterator.next (entry) !=0;
-           set_iterator.advance ())
-        delete [] *entry;
-    }
-}
-
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY> int
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::close (void)
-{
-  ACE_TRACE ("ACE_Timer_Heap_T::close");
 
   size_t current_size =
     this->cur_size_;
@@ -251,13 +222,25 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::close (void)
       this->upcall_functor ().deletion (*this, eh, act);
     }
 
-  // leave the rest to the destructor
-  return 0;
+  delete [] this->heap_;
+  delete [] this->timer_ids_;
+
+  // clean up any preallocated timer nodes
+  if (preallocated_nodes_ != 0)
+    {
+      ACE_Unbounded_Set_Iterator<ACE_Timer_Node_T<TYPE> *>
+        set_iterator (this->preallocated_node_set_);
+
+      for (ACE_Timer_Node_T<TYPE> **entry = 0;
+           set_iterator.next (entry) !=0;
+           set_iterator.advance ())
+        delete [] *entry;
+    }
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 long
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::pop_freelist (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::pop_freelist (void)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::pop_freelist");
 
@@ -288,9 +271,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::pop_freelist (void)
   return static_cast<long> (this->timer_ids_curr_);
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::push_freelist (long old_id)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::push_freelist (long old_id)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::push_freelist");
 
@@ -313,9 +296,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::push_freelist (long old_
   return;
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 long
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::timer_id (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::timer_id (void)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::timer_id");
 
@@ -325,17 +308,17 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::timer_id (void)
 
 // Checks if queue is empty.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 bool
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::is_empty (void) const
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::is_empty (void) const
 {
   ACE_TRACE ("ACE_Timer_Heap_T::is_empty");
   return this->cur_size_ == 0;
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
-ACE_Timer_Queue_Iterator_T<TYPE> &
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::iter (void)
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
+ACE_Timer_Queue_Iterator_T<TYPE, FUNCTOR, ACE_LOCK> &
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::iter (void)
 {
   this->iterator_->first ();
   return *this->iterator_;
@@ -343,16 +326,16 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::iter (void)
 
 // Returns earliest time in a non-empty queue.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY> const ACE_Time_Value &
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::earliest_time (void) const
+template <class TYPE, class FUNCTOR, class ACE_LOCK> const ACE_Time_Value &
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::earliest_time (void) const
 {
   ACE_TRACE ("ACE_Timer_Heap_T::earliest_time");
   return this->heap_[0]->get_timer_value ();
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::dump (void) const
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::dump (void) const
 {
 #if defined (ACE_HAS_DUMP)
   ACE_TRACE ("ACE_Timer_Heap_T::dump");
@@ -388,9 +371,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::dump (void) const
 #endif /* ACE_HAS_DUMP */
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::copy (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::copy (
   size_t slot,
   ACE_Timer_Node_T<TYPE> *moved_node)
 {
@@ -409,9 +392,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::copy (
 // this function must call either free_node (to reclaim the timer ID
 // and the timer node memory, as well as decrement the size of the queue)
 // or reschedule (to reinsert the node in the heap at a new time).
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 ACE_Timer_Node_T<TYPE> *
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::remove (size_t slot)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::remove (size_t slot)
 {
   ACE_Timer_Node_T<TYPE> *removed_node =
     this->heap_[slot];
@@ -454,8 +437,8 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::remove (size_t slot)
   return removed_node;
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY> void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reheap_down (
+template <class TYPE, class FUNCTOR, class ACE_LOCK> void
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::reheap_down (
   ACE_Timer_Node_T<TYPE> *moved_node,
   size_t slot,
   size_t child)
@@ -488,9 +471,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reheap_down (
   this->copy (slot, moved_node);
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reheap_up (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::reheap_up (
   ACE_Timer_Node_T<TYPE> *moved_node,
   size_t slot,
   size_t parent)
@@ -518,9 +501,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reheap_up (
               moved_node);
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::insert (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::insert (
   ACE_Timer_Node_T<TYPE> *new_node)
 {
   if (this->cur_size_ + this->cur_limbo_ + 2 >= this->max_size_)
@@ -532,9 +515,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::insert (
   this->cur_size_++;
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::grow_heap (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::grow_heap (void)
 {
   // All the containers will double in size from max_size_.
   size_t new_size = this->max_size_ * 2;
@@ -614,9 +597,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::grow_heap (void)
 // Reschedule a periodic timer.  This function must be called with the
 // mutex lock held.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reschedule (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::reschedule (
   ACE_Timer_Node_T<TYPE> *expired)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::reschedule");
@@ -631,9 +614,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reschedule (
   this->insert (expired);
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 ACE_Timer_Node_T<TYPE> *
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::alloc_node (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::alloc_node (void)
 {
   ACE_Timer_Node_T<TYPE> *temp = 0;
 
@@ -650,19 +633,16 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::alloc_node (void)
 
       temp = this->preallocated_nodes_freelist_;
 
-      if (this->preallocated_nodes_freelist_)
-        {
-          // Remove the first element from the freelist.
-          this->preallocated_nodes_freelist_ =
-            this->preallocated_nodes_freelist_->get_next ();
-        }
+      // Remove the first element from the freelist.
+      this->preallocated_nodes_freelist_ =
+        this->preallocated_nodes_freelist_->get_next ();
     }
   return temp;
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 void
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::free_node (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::free_node (
   ACE_Timer_Node_T<TYPE> *node)
 {
   // Return this timer id to the freelist.
@@ -681,9 +661,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::free_node (
 // Insert a new timer that expires at time future_time; if interval is
 // > 0, the handler will be reinvoked periodically.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 long
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::schedule_i (
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::schedule_i (
   const TYPE &type,
   const void *act,
   const ACE_Time_Value &future_time,
@@ -719,9 +699,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::schedule_i (
 // Locate and remove the single timer with a value of @a timer_id from
 // the timer queue.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 int
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::cancel (long timer_id,
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::cancel (long timer_id,
                                                    const void **act,
                                                    int dont_call)
 {
@@ -776,9 +756,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::cancel (long timer_id,
 
 // Locate and update the inteval on the timer_id
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 int
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reset_interval (long timer_id,
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::reset_interval (long timer_id,
                                                            const ACE_Time_Value &interval)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::reset_interval");
@@ -812,9 +792,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::reset_interval (long tim
 
 // Locate and remove all values of @a type from the timer queue.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 int
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::cancel (const TYPE &type,
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::cancel (const TYPE &type,
                                                    int dont_call)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::cancel");
@@ -869,9 +849,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::cancel (const TYPE &type
 
 // Returns the earliest node or returns 0 if the heap is empty.
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 ACE_Timer_Node_T <TYPE> *
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::remove_first (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::remove_first (void)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::remove_first");
 
@@ -881,9 +861,9 @@ ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::remove_first (void)
   return this->remove (0);
 }
 
-template <class TYPE, class FUNCTOR, class ACE_LOCK, typename TIME_POLICY>
+template <class TYPE, class FUNCTOR, class ACE_LOCK>
 ACE_Timer_Node_T <TYPE> *
-ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK, TIME_POLICY>::get_first (void)
+ACE_Timer_Heap_T<TYPE, FUNCTOR, ACE_LOCK>::get_first (void)
 {
   ACE_TRACE ("ACE_Timer_Heap_T::get_first");
 

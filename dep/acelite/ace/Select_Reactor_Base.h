@@ -4,7 +4,7 @@
 /**
  *  @file    Select_Reactor_Base.h
  *
- *  $Id: Select_Reactor_Base.h 93792 2011-04-07 11:48:50Z mcorino $
+ *  $Id: Select_Reactor_Base.h 87252 2009-10-28 20:03:48Z cleeland $
  *
  *  @author Douglas C. Schmidt <schmidt@cs.wustl.edu>
  */
@@ -92,6 +92,7 @@ public:
 class ACE_Event_Tuple
 {
 public:
+
   /// Default constructor.
   ACE_Event_Tuple (void);
 
@@ -105,6 +106,7 @@ public:
   bool operator!= (const ACE_Event_Tuple &rhs) const;
 
 public:
+
   /// Handle.
   ACE_HANDLE handle_;
 

@@ -1,14 +1,16 @@
 // -*- C++ -*-
+
 //=============================================================================
 /**
  *  @file    SSL_Context.h
  *
- *  $Id: SSL_Context.h 96087 2012-08-21 12:26:44Z sma $
+ *  $Id: SSL_Context.h 83916 2008-11-28 16:32:21Z johnnyw $
  *
  *  @author Carlos O'Ryan <coryan@ece.uci.edu>
  *  @author Ossama Othman <ossama@dre.vanderbilt.edu>
  */
 //=============================================================================
+
 
 #ifndef ACE_SSL_CONTEXT_H
 #define ACE_SSL_CONTEXT_H
@@ -29,11 +31,13 @@
 
 #include <openssl/ssl.h>
 
+
 ACE_BEGIN_VERSIONED_NAMESPACE_DECL
 
 class ACE_SSL_Export ACE_SSL_Data_File
 {
 public:
+
   /// Default constructor
   ACE_SSL_Data_File (void);
 
@@ -48,6 +52,7 @@ public:
   int type (void) const;
 
 private:
+
   /// The file name
   ACE_CString file_name_;
 
@@ -57,34 +62,6 @@ private:
 
 // ****************************************************************
 
-// NOTE: Solaris studio compilers amongst others will issue warnings if the
-// the correct type of function pointer (i.e. extern "C" ) is not stored/used
-// of the form:
-// Warning (Anachronism): Formal argument callback of type
-//   extern "C" int(*)(int,x509_store_ctx_st*) in call to
-//   SSL_CTX_set_verify(ssl_ctx_st*, int, extern "C" int(*)(int,x509_store_ctx_st*))
-//   is being passed int(*)(int,x509_store_ctx_st*)
-// when C library routines are passed CallBack functions pointers that are
-// actually C++ functions.
-//
-// Unfortunatly you can not specify extern "C" linkage anywhere inside a class
-// declaration or inside a function prototype for individual parameters. I.e:
-//   class { extern "C" int (*callback_) (int, void *); };
-// to store a function pointer as a data member of the class is illegal as is:
-//   void function (extern "C" int (*callback) (int, void *);
-// to declare function (or a class member) that takes a extern "C" function
-// pointer as a parameter.
-//
-// Since we need an extern "C" function pointer as a parameter to be stored
-// in the class and handled by member functions, we are forced to declare
-// a typedef of that extern "C" function pointer that we can then use.
-// Again unfortunatly you also are not allowed to simply add the extern "C"
-// to the typedef itself, instead you have to place the typedef declaration
-// inside an extern "C" block, thus:
-
-extern "C" {
-  typedef int (*extern_C_CallBackVerify_t) (int, X509_STORE_CTX *);
-}
 
 /**
  * @class ACE_SSL_Context
@@ -98,6 +75,7 @@ extern "C" {
 class ACE_SSL_Export ACE_SSL_Context
 {
 public:
+
 #ifdef ACE_HAS_THREADS
   typedef ACE_SYNCH_MUTEX lock_type;
 #endif  /* ACE_HAS_THREADS */
@@ -257,6 +235,7 @@ public:
    */
   int have_trusted_ca (void) const;
 
+
   /**
    *  @todo Complete this documentation where elipses(...) are used
    *
@@ -305,8 +284,8 @@ public:
    * inherited by all the ACE_SSL objects created using the context.
    * It can be overriden on a per-ACE_SSL object.
    */
-  void default_verify_callback (extern_C_CallBackVerify_t);
-  extern_C_CallBackVerify_t  default_verify_callback (void) const;
+  void default_verify_callback (int (*callback) (int, X509_STORE_CTX *));
+  int (*default_verify_callback(void) const) (int,X509_STORE_CTX *);
 
   /**
    * @name OpenSSL Random Number Generator Seed Related Methods
@@ -360,6 +339,7 @@ public:
   //@}
 
 private:
+
   /// Verify if the context has been initialized or not.
   void check_context (void);
 
@@ -374,6 +354,7 @@ private:
   //@}
 
 private:
+
   /// The SSL_CTX structure
   SSL_CTX *context_;
 
@@ -389,7 +370,7 @@ private:
   int default_verify_mode_;
 
   /// The default verify callback.
-  extern_C_CallBackVerify_t  default_verify_callback_;
+  int (*default_verify_callback_)(int, X509_STORE_CTX *);
 
   /// count of successful CA load attempts
   int have_ca_;
@@ -399,6 +380,7 @@ private:
   /// application is multithreaded.
   static lock_type * locks_;
 #endif  /* ACE_HAS_THREADS */
+
 };
 
 ACE_END_VERSIONED_NAMESPACE_DECL
@@ -408,4 +390,5 @@ ACE_END_VERSIONED_NAMESPACE_DECL
 #endif /* __ACE_INLINE__ */
 
 #include /**/ "ace/post.h"
+
 #endif  /* ACE_SSL_CONTEXT_H */

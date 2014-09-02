@@ -1,4 +1,4 @@
-// $Id: Select_Reactor_Base.cpp 95574 2012-02-29 07:26:08Z johnnyw $
+// $Id: Select_Reactor_Base.cpp 91368 2010-08-16 13:03:34Z mhengstmengel $
 
 #include "ace/Select_Reactor_Base.h"
 #include "ace/Reactor.h"
@@ -530,8 +530,7 @@ ACE_Select_Reactor_Handler_Repository::dump (void) const
 ACE_ALLOC_HOOK_DEFINE(ACE_Select_Reactor_Handler_Repository_Iterator)
 
 ACE_Select_Reactor_Notify::ACE_Select_Reactor_Notify (void)
-  : select_reactor_ (0)
-  , max_notify_iterations_ (-1)
+  : max_notify_iterations_ (-1)
 {
 }
 
@@ -600,7 +599,8 @@ ACE_Select_Reactor_Notify::open (ACE_Reactor_Impl *r,
 
   if (disable_notify_pipe == 0)
     {
-      this->select_reactor_ = dynamic_cast<ACE_Select_Reactor_Impl *> (r);
+      this->select_reactor_ =
+        dynamic_cast<ACE_Select_Reactor_Impl *> (r);
 
       if (select_reactor_ == 0)
         {

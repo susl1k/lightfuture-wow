@@ -1,4 +1,4 @@
-// $Id: Filecache.cpp 94034 2011-05-09 19:11:03Z johnnyw $
+// $Id: Filecache.cpp 91368 2010-08-16 13:03:34Z mhengstmengel $
 
 #include "ace/Filecache.h"
 #include "ace/Object_Manager.h"
@@ -164,7 +164,6 @@ template <>
 ACE_Filecache_Hash_Entry::ACE_Hash_Map_Entry (ACE_Filecache_Hash_Entry *next,
                                               ACE_Filecache_Hash_Entry *prev)
   : ext_id_ (0),
-    int_id_ (0),
     next_ (next),
     prev_ (prev)
 {

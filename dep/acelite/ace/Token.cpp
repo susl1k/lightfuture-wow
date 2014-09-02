@@ -1,4 +1,4 @@
-// $Id: Token.cpp 96024 2012-08-09 19:42:19Z schmidt $
+// $Id: Token.cpp 91286 2010-08-05 09:04:31Z johnnyw $
 
 #include "ace/Token.h"
 
@@ -204,7 +204,9 @@ ACE_Token::shared_acquire (void (*sleep_hook_func)(void *),
       return 0;
     }
 
+  //
   // Someone already holds the token.
+  //
 
   // Check if it is us.
   if (ACE_OS::thr_equal (thr_id, this->owner_))
@@ -534,6 +536,7 @@ ACE_Token::wakeup_next_waiter (void)
   // Wake up waiter and make it runable.
   queue->head_->runable_ = 1;
   queue->head_->signal ();
+
   this->owner_ = queue->head_->thread_id_;
 }
 

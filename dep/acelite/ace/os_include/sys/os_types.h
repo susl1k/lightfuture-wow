@@ -6,7 +6,7 @@
  *
  *  data types
  *
- *  $Id: os_types.h 96089 2012-08-21 16:59:07Z johnnyw $
+ *  $Id: os_types.h 91683 2010-09-09 09:07:49Z johnnyw $
  *
  *  @author Don Hinton <dhinton@dresystems.com>
  *  @author This code was originally in various places including ace/OS.h.
@@ -47,9 +47,13 @@ extern "C"
 
 typedef double ACE_timer_t;
 
-#if defined (ACE_LACKS_CLOCKID_T)
+// todo: don't forget to clean this up!  ;-)
+#if !defined (ACE_HAS_CLOCK_GETTIME) && !(defined (_CLOCKID_T_) || defined (_CLOCKID_T))
    typedef int clockid_t;
-#endif /* ACE_LACKS_CLOCKID_T */
+#  if !defined (CLOCK_REALTIME)
+#    define CLOCK_REALTIME 0
+#  endif /* CLOCK_REALTIME */
+#endif /* ! ACE_HAS_CLOCK_GETTIME && ! _CLOCKID_T_ */
 
 #if defined (ACE_LACKS_DEV_T)
    typedef unsigned int dev_t;
@@ -67,7 +71,7 @@ typedef double ACE_timer_t;
 
 #if defined (ACE_SIZEOF_LONG) && ACE_SIZEOF_LONG == 8
    typedef off_t ACE_LOFF_T;
-#elif defined (ACE_HAS_RTEMS) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__APPLE__) || defined(__INTERIX) || \
+#elif defined (ACE_HAS_RTEMS) || defined (__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__APPLE__) || defined(ACE_MVS) || defined(__INTERIX) || \
   (defined (ACE_OPENVMS) && defined (_LARGEFILE))
    typedef off_t ACE_LOFF_T;
 #elif defined (AIX) || defined (HPUX) || defined (__QNX__)
@@ -76,7 +80,7 @@ typedef double ACE_timer_t;
    typedef offset_t ACE_LOFF_T;
 #elif defined (WIN32)
    typedef __int64  ACE_LOFF_T;
-#elif (defined (ACE_VXWORKS) && (ACE_VXWORKS <= 0x690)) || \
+#elif (defined (ACE_VXWORKS) && (ACE_VXWORKS <= 0x680)) || \
   defined (ACE_LYNXOS_MAJOR) || \
   (defined (ACE_OPENVMS) && !defined (_LARGEFILE)) || \
   defined (__TANDEM)
