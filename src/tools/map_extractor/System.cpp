@@ -9,6 +9,7 @@
 #include "direct.h"
 #else
 #include <sys/stat.h>
+#include <unistd.h>
 #endif
 
 #include "dbcfile.h"
@@ -48,9 +49,9 @@ char output_path[128] = ".";
 char input_path[128] = ".";
 uint32 maxAreaId = 0;
 
-//**************************************************
+// **************************************************
 // Extractor options
-//**************************************************
+// **************************************************
 enum Extract
 {
     EXTRACT_MAP = 1,
@@ -88,11 +89,17 @@ static const char* const langs[] = {"enGB", "enUS", "deDE", "esES", "frFR", "koK
 
 void CreateDir( const std::string& Path )
 {
+    int ret;
     #ifdef _WIN32
-    _mkdir( Path.c_str());
+    ret = _mkdir( Path.c_str());
     #else
-    mkdir( Path.c_str(), 0777 );
+    ret = mkdir( Path.c_str(), 0777 );
     #endif
+    if (ret != 0)
+    {
+        printf("Fatal Error: Could not create directory %s check your permissions", Path.c_str());
+        exit(1);
+    }
 }
 
 bool FileExists( const char* FileName )
@@ -179,7 +186,7 @@ uint32 ReadBuild(int locale)
         exit(1);
     }
 
-    std::string text = m.getPointer();
+    std::string text = std::string(m.getPointer(), m.getSize());
     m.close();
 
     size_t pos = text.find("version=\"");
@@ -221,7 +228,7 @@ uint32 ReadMapDBC()
         map_ids[x].id = dbc.getRecord(x).getUInt(0);
         strcpy(map_ids[x].name, dbc.getRecord(x).getString(1));
     }
-    printf("Done! (%u maps loaded)\n", map_count);
+    printf("Done! (%u maps loaded)\n", (uint32)map_count);
     return map_count;
 }
 
@@ -246,7 +253,7 @@ void ReadAreaTableDBC()
 
     maxAreaId = dbc.getMaxId();
 
-    printf("Done! (%u areas loaded)\n", area_count);
+    printf("Done! (%u areas loaded)\n", (uint32)area_count);
 }
 
 void ReadLiquidTypeTableDBC()
@@ -267,7 +274,7 @@ void ReadLiquidTypeTableDBC()
     for(uint32 x = 0; x < liqTypeCount; ++x)
         LiqType[dbc.getRecord(x).getUInt(0)] = dbc.getRecord(x).getUInt(3);
 
-    printf("Done! (%u LiqTypes loaded)\n", liqTypeCount);
+    printf("Done! (%u LiqTypes loaded)\n", (uint32)liqTypeCount);
 }
 
 //
@@ -574,7 +581,7 @@ bool ConvertADT(char *filename, char *filename2, int /*cell_y*/, int /*cell_x*/,
     // Try store as packed in uint16 or uint8 values
     if (!(heightHeader.flags & MAP_HEIGHT_NO_HEIGHT))
     {
-        float step;
+        float step = 0;
         // Try Store as uint values
         if (CONF_allow_float_to_int)
         {
@@ -936,7 +943,7 @@ void ExtractMapsFromMpq(uint32 build)
     printf("Convert map files\n");
     for(uint32 z = 0; z < map_count; ++z)
     {
-        printf("Extract %s (%d/%d)                  \n", map_ids[z].name, z+1, map_count);
+        printf("Extract %s (%d/%u)                  \n", map_ids[z].name, z+1, map_count);
         // Loadup map grid data
         sprintf(mpq_map_name, "World\\Maps\\%s\\%s.wdt", map_ids[z].name, map_ids[z].name);
         WDT_file wdt;
@@ -1016,13 +1023,13 @@ void ExtractDBCFiles(int locale, bool basicLocale)
     }
 
     // extract DBCs
-    int count = 0;
+    uint32 count = 0;
     for (set<string>::iterator iter = dbcfiles.begin(); iter != dbcfiles.end(); ++iter)
     {
         string filename = path;
         filename += (iter->c_str() + strlen("DBFilesClient\\"));
 
-        if(ExtractFile(iter->c_str(), filename))
+        if (ExtractFile(iter->c_str(), filename))
             ++count;
     }
     printf("Extracted %u DBC files\n\n", count);

@@ -1,6 +1,3 @@
-#define _CRT_SECURE_NO_DEPRECATE
-#define _CRT_SECURE_NO_WARNINGS
-
 #ifndef MPQ_H
 #define MPQ_H
 
@@ -21,6 +18,7 @@ public:
     mpq_archive_s *mpq_a;
 
     MPQArchive(const char* filename);
+    ~MPQArchive() { close(); }
     void close();
 
     void GetFileListTo(vector<string>& filelist) {
@@ -29,7 +27,8 @@ public:
         libmpq__off_t size, transferred;
         libmpq__file_unpacked_size(mpq_a, filenum, &size);
 
-        char *buffer = new char[size];
+        char *buffer = new char[size+1];
+        buffer[size] = '\0';
 
         libmpq__file_read(mpq_a, filenum, (unsigned char*)buffer, size, &transferred);
 
