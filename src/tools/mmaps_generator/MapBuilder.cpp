@@ -28,6 +28,10 @@
 
 #include "DisableMgr.h"
 #include <ace/OS_NS_unistd.h>
+#include "LoginDatabase.h"
+
+// These make the linker happy.
+LoginDatabaseWorkerPool LoginDatabase;
 
 uint32 GetLiquidFlags(uint32 /*liquidType*/) { return 0; }
 namespace DisableMgr
