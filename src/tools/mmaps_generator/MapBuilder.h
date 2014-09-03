@@ -22,7 +22,6 @@
 #include <vector>
 #include <set>
 #include <map>
-#include <list>
 
 #include "TerrainBuilder.h"
 #include "IntermediateValues.h"
@@ -40,24 +39,7 @@ using namespace VMAP;
 
 namespace MMAP
 {
-    struct MapTiles
-    {
-        MapTiles() : m_mapId(uint32(-1)), m_tiles(NULL) {}
-
-        MapTiles(uint32 id, std::set<uint32>* tiles) : m_mapId(id), m_tiles(tiles) {}
-        ~MapTiles() {}
-
-        uint32 m_mapId;
-        std::set<uint32>* m_tiles;
-
-        bool operator==(uint32 id)
-        {
-            return m_mapId == id;
-        }
-    };
-
-    typedef std::list<MapTiles> TileList;
-
+    typedef std::map<uint32, std::set<uint32>*> TileList;
     struct Tile
     {
         Tile() : chf(NULL), solid(NULL), cset(NULL), pmesh(NULL), dmesh(NULL) {}
