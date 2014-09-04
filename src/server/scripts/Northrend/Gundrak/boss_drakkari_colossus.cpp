@@ -146,6 +146,7 @@ class boss_drakkari_colossus : public CreatureScript
                         DoCast(SPELL_EMERGE);
                         break;
                     case ACTION_FREEZE_COLOSSUS:
+						me->GetMotionMaster()->Clear();
                         me->GetMotionMaster()->MoveIdle();
 
                         me->SetReactState(REACT_PASSIVE);
@@ -178,7 +179,7 @@ class boss_drakkari_colossus : public CreatureScript
                 if (phase == COLOSSUS_PHASE_NORMAL ||
                     phase == COLOSSUS_PHASE_FIRST_ELEMENTAL_SUMMON)
                 {
-                    if (HealthBelowPct( phase == COLOSSUS_PHASE_NORMAL ? 50 : 5))
+					if (me->HealthBelowPctDamaged(phase == COLOSSUS_PHASE_NORMAL ? 50 : 5, damage))
                     {
                         damage = 0;
                         phase = (phase == COLOSSUS_PHASE_NORMAL ? COLOSSUS_PHASE_FIRST_ELEMENTAL_SUMMON : COLOSSUS_PHASE_SECOND_ELEMENTAL_SUMMON);
@@ -193,7 +194,7 @@ class boss_drakkari_colossus : public CreatureScript
             {
                if (data == DATA_COLOSSUS_PHASE)
                    return phase;
-               else if (data == DATA_INTRO_DONE)
+               if (data == DATA_INTRO_DONE)
                    return introDone;
 
                return 0;
@@ -308,25 +309,9 @@ class boss_drakkari_elemental : public CreatureScript
                 DoMeleeAttackIfReady();
             }
 
-           void DoAction(const int32 action)
-            {
-                switch (action)
-                {
-                    case ACTION_RETURN_TO_COLOSSUS:
-                        DoCast(SPELL_SURGE_VISUAL);
-                        if (instance)
-                        {
-                            if (Creature* colossus = Unit::GetCreature(*me, instance->GetData64(DATA_DRAKKARI_COLOSSUS)))
-                                // what if the elemental is more than 80 yards from drakkari colossus ?
-                                DoCast(colossus, SPELL_MERGE, true);
-                        }
-                        break;
-                }
-           }
-
             void DamageTaken(Unit* /*attacker*/, uint32& damage)
             {
-                if (HealthBelowPct(50) && instance)
+				if (me->HealthBelowPctDamaged(50, damage) && instance)
                 {
                     if (Creature* colossus = Unit::GetCreature(*me, instance->GetData64(DATA_DRAKKARI_COLOSSUS)))
                     {
@@ -338,17 +323,10 @@ class boss_drakkari_elemental : public CreatureScript
                             if (me->HasUnitState(UNIT_STATE_CHARGING))
                                 return;
 
-                            // not sure about this, the idea of this code is to prevent bug the elemental
-                            // if it is not in a acceptable distance to cast the charge spell.
-                            /*if (me->GetDistance(colossus) > 80.0f)
-                            {
-                                if (me->GetMotionMaster()->GetCurrentMovementGeneratorType() == POINT_MOTION_TYPE)
-                                    return;
-
-                                me->GetMotionMaster()->MovePoint(0, colossus->GetPositionX(), colossus->GetPositionY(), colossus->GetPositionZ());
-                                return;
-                            }*/
-                            DoAction(ACTION_RETURN_TO_COLOSSUS);
+							DoCast(SPELL_SURGE_VISUAL);
+							if (instance)
+								if (Creature* colossus = Unit::GetCreature(*me, instance->GetData64(DATA_DRAKKARI_COLOSSUS)))
+									me->GetMotionMaster()->MoveCharge(colossus->GetPositionX(), colossus->GetPositionY(), colossus->GetPositionZ(), me->GetSpeed(MOVE_RUN));
                         }
                     }
                 }
@@ -359,17 +337,20 @@ class boss_drakkari_elemental : public CreatureScript
                 me->DespawnOrUnsummon();
             }
 
-            void SpellHitTarget(Unit* target, SpellInfo const* spell)
-            {
-                if (spell->Id == SPELL_MERGE)
-                {
-                    if (Creature* colossus = target->ToCreature())
-                    {
-                        colossus->AI()->DoAction(ACTION_UNFREEZE_COLOSSUS);
-                        me->DespawnOrUnsummon();
-                    }
-                }
-            }
+			void MovementInform(uint32 type, uint32 point)
+			{
+				if (type == POINT_MOTION_TYPE && point == EVENT_CHARGE)
+				{
+					if (instance)
+					{
+						if (Creature* colossus = Unit::GetCreature(*me, instance->GetData64(DATA_DRAKKARI_COLOSSUS)))
+						{
+							colossus->AI()->DoAction(ACTION_UNFREEZE_COLOSSUS);
+							me->DespawnOrUnsummon();
+						}
+					}
+				}
+			}
 
         private:
             EventMap events;

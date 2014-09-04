@@ -1884,9 +1884,7 @@ class spell_halion_twilight_cutter_trigger : public SpellScriptLoader
 
 			void Register()
 			{
-				OnEffectPeriodic += AuraEffectPeriodicFn(spell_halion_twilight_cutter_trigger_AuraScript::HandleTriggerSpell, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
 				OnEffectPeriodic += AuraEffectPeriodicFn(spell_halion_twilight_cutter_trigger_AuraScript::HandleTriggerSpell, EFFECT_1, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
-				OnEffectPeriodic += AuraEffectPeriodicFn(spell_halion_twilight_cutter_trigger_AuraScript::HandleTriggerSpell, EFFECT_2, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
 			}
 		};
 

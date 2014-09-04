@@ -70,6 +70,14 @@ enum Data64
     DATA_KELTHUZAD_TRIGGER,
 };
 
+enum GameObjects
+{
+    GO_ARAC_PORTAL              = 181575,
+    GO_PLAG_PORTAL              = 181577,
+    GO_MILI_PORTAL              = 181578,
+    GO_CONS_PORTAL              = 181576,
+};
+
 #define GO_BIRTH                181356
 
 #endif

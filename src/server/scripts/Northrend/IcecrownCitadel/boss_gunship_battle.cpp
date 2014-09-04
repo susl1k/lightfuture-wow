@@ -894,6 +894,7 @@ class npc_muradin_gunship : public CreatureScript
 				EventDone = _instance->GetBossState(DATA_GUNSHIP_EVENT) == DONE;
 				RespawnQueue.clear();
 				RespawnQueue.clear();
+				friendlyCommander = 0;
 			}
 
 			void SendMusicToPlayers(uint32 musicId) const
@@ -967,7 +968,10 @@ class npc_muradin_gunship : public CreatureScript
 							if (Creature* saurfang = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_HIGH_OVERLORD_SAURFANG)))
 								saurfang->AI()->DoAction(ACTION_ALLIANCE_VERSION_START);
 							if (Creature* meCopy = me->SummonCreature(2000120, *me, TEMPSUMMON_MANUAL_DESPAWN))
+							{
 								meCopy->AI()->SetData(1,1);
+								friendlyCommander = meCopy->GetGUID();
+							}
 							me->SetVisible(false);
 							events.ScheduleEvent(EVENT_SUMMON_PORTAL, 30000);
 							events.ScheduleEvent(EVENT_WIPE_CHECK, 5000);
@@ -1019,6 +1023,7 @@ class npc_muradin_gunship : public CreatureScript
 						events.ScheduleEvent(EVENT_OUTRO_ALLIANCE_1, 3500);
 						events.ScheduleEvent(EVENT_OUTRO_ALLIANCE_2, 23000);
 						events.ScheduleEvent(EVENT_OUTRO_ALLIANCE_3, 32000);
+						me->SetVisible(true);
 						break;
 					case ACTION_FAIL:
 						if (Creature* saurfang = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_HIGH_OVERLORD_SAURFANG)))
@@ -1030,6 +1035,8 @@ class npc_muradin_gunship : public CreatureScript
 							_instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, pAllianceBoss);
 						if (Creature* pHordeBoss = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_ORGRIMMAR_HAMMER_BOSS)))
 							_instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, pHordeBoss);
+						if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+							meCopy->DespawnOrUnsummon();
 						StopFight(skybreaker, CheckUnfriendlyShip(me, _instance, DATA_GB_HIGH_OVERLORD_SAURFANG));
 						events.ScheduleEvent(EVENT_FAIL, 10000);
 						break;
@@ -1136,7 +1143,8 @@ class npc_muradin_gunship : public CreatureScript
 								if (Creature* sergante = me->SummonCreature(NPC_GB_KORKRON_SERGANTE, -391.0f, 2069.0f, 466.8f, 5.04f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
 								{
 									sergante->CastSpell(sergante, SPELL_TELEPORT_VISUAL, true);
-									//me->Attack(sergante, true);fd
+									if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+										meCopy->Attack(sergante, true);
 								}
 								events.ScheduleEvent(EVENT_SUMMON_PORTAL, 90000);
 								events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 3000);
@@ -1151,7 +1159,8 @@ class npc_muradin_gunship : public CreatureScript
 										reavers->CastSpell(reavers, SPELL_TELEPORT_VISUAL, true);
 										events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 21000 / SummonCount);
 										++count;
-										//me->Attack(reavers, true);fds
+										if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+											meCopy->Attack(reavers, true);
 									}
 							break;
 						case EVENT_OUTRO_ALLIANCE_1:
@@ -1209,6 +1218,7 @@ class npc_muradin_gunship : public CreatureScript
 				uint32 count;
 				std::list<uint64> RespawnQueue;
 				bool EventDone;
+				uint64 friendlyCommander;
 		};
 
 		CreatureAI* GetAI(Creature* pCreature) const
@@ -1314,6 +1324,7 @@ class npc_saurfang_gunship : public CreatureScript
 				EventDone = _instance->GetBossState(DATA_GUNSHIP_EVENT) == DONE;
 				RespawnQueue.clear();
 				RespawnQueue.clear();
+				friendlyCommander = 0;
 			}
 
 			void SendMusicToPlayers(uint32 musicId) const
@@ -1385,7 +1396,10 @@ class npc_saurfang_gunship : public CreatureScript
 							if (Creature* muradin = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_MURADIN_BRONZEBEARD)))
 								muradin->AI()->DoAction(ACTION_HORDE_VERSION_START);
 							if (Creature* meCopy = me->SummonCreature(2000130, *me, TEMPSUMMON_MANUAL_DESPAWN))
+							{
 								meCopy->AI()->SetData(1,1);
+								friendlyCommander = meCopy->GetGUID();
+							}
 							me->SetVisible(false);
 							events.ScheduleEvent(EVENT_SUMMON_PORTAL, 30000);
 							events.ScheduleEvent(EVENT_WIPE_CHECK, 5000);
@@ -1437,6 +1451,7 @@ class npc_saurfang_gunship : public CreatureScript
 						events.ScheduleEvent(EVENT_OUTRO_HORDE_1, 3500);
 						events.ScheduleEvent(EVENT_OUTRO_HORDE_2, 21000);
 						events.ScheduleEvent(EVENT_OUTRO_HORDE_3, 32000);
+						me->SetVisible(true);
 						break;
 					case ACTION_FAIL:
 						if (Creature* muradin = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_GB_MURADIN_BRONZEBEARD)))
@@ -1448,6 +1463,8 @@ class npc_saurfang_gunship : public CreatureScript
 							_instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, pHordeBoss);
 						if (Creature* pAllianceBoss = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_SKYBREAKER_BOSS)))
 							_instance->SendEncounterUnit(ENCOUNTER_FRAME_DISENGAGE, pAllianceBoss);
+						if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+							meCopy->DespawnOrUnsummon();
 						StopFight(orgrimmar,CheckUnfriendlyShip(me,_instance, DATA_GB_MURADIN_BRONZEBEARD));
 						events.ScheduleEvent(EVENT_FAIL, 10000);
 						break;
@@ -1549,7 +1566,8 @@ class npc_saurfang_gunship : public CreatureScript
 								if (Creature* sergante = me->SummonCreature(NPC_GB_SKYBREAKER_SERGANTE, -423.0f, 2398.0f, 472.0f, 1.64f, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000))
 								{
 									sergante->CastSpell(sergante, SPELL_TELEPORT_VISUAL, true);
-									//me->Attack(sergante, true);
+									if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+										meCopy->Attack(sergante, true);
 								}
 								events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 3000);
 								events.ScheduleEvent(EVENT_SUMMON_PORTAL, 90000);
@@ -1564,7 +1582,8 @@ class npc_saurfang_gunship : public CreatureScript
 										marine->CastSpell(marine, SPELL_TELEPORT_VISUAL, true);
 										count++;
 										events.ScheduleEvent(EVENT_BOARDING_REAVERS_MARINE, 21000 / SummonCount);
-										//me->Attack(marine, true);
+										if (Creature* meCopy = Unit::GetCreature(*me, friendlyCommander))
+											meCopy->Attack(marine, true);
 									}
 							break;
 						case EVENT_OUTRO_HORDE_1:
@@ -1619,6 +1638,7 @@ class npc_saurfang_gunship : public CreatureScript
 				uint32 count;
 				std::list<uint64> RespawnQueue;
 				bool EventDone;
+				uint64 friendlyCommander;
 				
 				Map* map;
 				EventMap events;
@@ -1943,7 +1963,7 @@ class npc_sergeant : public CreatureScript
 			void Reset()
 			{
 				ScriptedAI::Reset();
-				me->setFaction(21);
+				//me->setFaction(21);
 				me->SetRespawnDelay(7*DAY);
 				events.Reset();
 				me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
@@ -2070,7 +2090,7 @@ class npc_marine_or_reaver : public CreatureScript
 			void Reset()
 			{
 				ScriptedAI::Reset();
-				me->setFaction(21);
+				//me->setFaction(21);
 				me->SetRespawnDelay(7*DAY);
 				events.Reset();
 				desperated = false;
@@ -3595,12 +3615,17 @@ class npc_commander : public CreatureScript
 			
 			void DamageTaken(Unit* /*attacker*/, uint32& damage)
 			{
-				if (friendly)
-				{
-					//TODO FAIL
-				}
 				if (damage > me->GetHealth())
+				{
+					if (friendly)
+						if (me->ToTempSummon())
+							if (me->ToTempSummon()->GetSummoner())
+							{
+								   me->ToTempSummon()->GetSummoner()->GetAI()->DoAction(ACTION_FAIL);
+								   me->DespawnOrUnsummon(1);
+							}
 					damage = me->GetHealth() - 1;
+				}
 			}
 			
 			void UpdateAI(const uint32 diff)
@@ -3679,12 +3704,23 @@ class npc_commander : public CreatureScript
 
 			bool CanAIAttack(Unit const* target) const
 			{
-				return	(!friendly) == (target->ToPlayer() != NULL);/* ||
-						friendly &&
+				return	ScriptedAI::CanAIAttack(target) &&
 						(
-							target->GetEntry() == NPC_GB_KORKRON_SERGANTE || target->GetEntry() == NPC_GB_KORKRON_REAVERS ||
-							target->GetEntry() == NPC_GB_SKYBREAKER_SERGANTE || target->GetEntry() == NPC_GB_SKYBREAKER_MARINE
-						);*/
+							(
+								!friendly &&
+								target->ToPlayer()
+							) ||
+							(
+								friendly &&
+								target->ToCreature() &&
+								(
+									target->GetEntry() == NPC_GB_KORKRON_SERGANTE ||
+									target->GetEntry() == NPC_GB_KORKRON_REAVERS ||
+									target->GetEntry() == NPC_GB_SKYBREAKER_SERGANTE ||
+									target->GetEntry() == NPC_GB_SKYBREAKER_MARINE
+								)
+							)
+						);
 			}
 			
 			private:

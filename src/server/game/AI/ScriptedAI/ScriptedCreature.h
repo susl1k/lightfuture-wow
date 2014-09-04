@@ -357,6 +357,18 @@ class WorldBossAI : public ScriptedAI
         SummonList summons;
 };
 
+struct Scripted_LandingAI : public ScriptedAI
+{
+    Scripted_LandingAI(Creature* creature) : ScriptedAI(creature) {}
+    virtual ~Scripted_LandingAI() {}
+
+	void EnterCombat(Unit* attacker) override;
+
+	void MovementInform(uint32 type, uint32 point) override;
+
+	void Reset() override;
+};
+
 // SD2 grid searchers.
 Creature* GetClosestCreatureWithEntry(WorldObject* source, uint32 entry, float maxSearchRange, bool alive = true);
 GameObject* GetClosestGameObjectWithEntry(WorldObject* source, uint32 entry, float maxSearchRange);

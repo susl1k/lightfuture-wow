@@ -654,6 +654,31 @@ void WorldBossAI::UpdateAI(uint32 const diff)
     DoMeleeAttackIfReady();
 }
 
+void Scripted_LandingAI::EnterCombat(Unit* attacker)
+{
+	me->GetMotionMaster()->MoveIdle();
+	me->GetMotionMaster()->MoveCharge(attacker->GetPositionX(), attacker->GetPositionY(), attacker->GetPositionZ(), me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
+}
+
+void Scripted_LandingAI::MovementInform(uint32 type, uint32 point)
+{
+	if (type == POINT_MOTION_TYPE && point == EVENT_CHARGE)
+	{
+		me->SetCanFly(false);
+		me->SetDisableGravity(false);
+		me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+	}
+}
+
+void Scripted_LandingAI::Reset()
+{
+	me->SetCanFly(true);
+	me->SetDisableGravity(true);
+	me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+	if (me->GetWaypointPath())
+		me->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+}
+
 // SD2 grid searchers.
 Creature* GetClosestCreatureWithEntry(WorldObject* source, uint32 entry, float maxSearchRange, bool alive /*= true*/)
 {

@@ -140,6 +140,11 @@ public:
         uint64 kelthuzadTriggerGUID;
         uint64 portalsGUID[4];
 
+		uint64 aracPortalGUID;
+		uint64 plagPortalGUID;
+		uint64 miliPortalGUID;
+		uint64 consPortalGUID;
+
         uint32 AbominationCount;
 
         GOState gothikDoorState;
@@ -165,6 +170,11 @@ public:
             stalaggGUID               = 0;
             kelthuzadGUID             = 0;
             kelthuzadTriggerGUID      = 0;
+
+			aracPortalGUID			  = 0;
+			plagPortalGUID			  = 0;
+			miliPortalGUID			  = 0;
+			consPortalGUID			  = 0;
 
             playerDied                = 0;
             gothikDoorState           = GO_STATE_ACTIVE;
@@ -234,6 +244,26 @@ public:
                 case GO_KELTHUZAD_TRIGGER:
                     kelthuzadTriggerGUID = go->GetGUID();
                     break;
+				case GO_ARAC_PORTAL:
+					if (GetBossState(BOSS_MAEXXNA) == DONE)
+						go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+					aracPortalGUID = go->GetGUID();
+					break;
+				case GO_PLAG_PORTAL:
+					if (GetBossState(BOSS_LOATHEB) == DONE)
+						go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+					plagPortalGUID = go->GetGUID();
+					break;
+				case GO_MILI_PORTAL:
+					if (GetBossState(BOSS_HORSEMEN) == DONE)
+						go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+					miliPortalGUID = go->GetGUID();
+					break;
+				case GO_CONS_PORTAL:
+					if (GetBossState(BOSS_THADDIUS) == DONE)
+						go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+					consPortalGUID = go->GetGUID();
+					break;
                 default:
                     break;
             }
@@ -370,11 +400,29 @@ public:
             if (!InstanceScript::SetBossState(id, state))
                 return false;
 
-            if (id == BOSS_HORSEMEN && state == DONE)
-            {
-                if (GameObject* pHorsemenChest = instance->GetGameObject(horsemenChestGUID))
-                    pHorsemenChest->SetRespawnTime(pHorsemenChest->GetRespawnDelay());
-            }
+			if (state == DONE)
+			{
+				GameObject* go = NULL;
+				switch (id)
+				{
+					case BOSS_MAEXXNA:
+						go = instance->GetGameObject(aracPortalGUID);
+						break;
+					case BOSS_LOATHEB:
+						go = instance->GetGameObject(plagPortalGUID);
+						break;
+					case BOSS_HORSEMEN:
+						go = instance->GetGameObject(miliPortalGUID);
+						if (GameObject* pHorsemenChest = instance->GetGameObject(horsemenChestGUID))
+							pHorsemenChest->SetRespawnTime(pHorsemenChest->GetRespawnDelay());
+						break;
+					case BOSS_THADDIUS:
+						go = instance->GetGameObject(consPortalGUID);
+						break;
+				}
+				if (go)
+					go->RemoveFlag(GAMEOBJECT_FLAGS, GO_FLAG_NOT_SELECTABLE);
+			}
 
             return true;
         }

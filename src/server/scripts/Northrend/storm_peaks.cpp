@@ -1293,6 +1293,51 @@ public:
     }
 };
 
+enum Stormpeak_Wyrm
+{
+	SPELL_FROST_SPIT = 57833,
+};
+
+class npc_stormpeak_wyrm : public CreatureScript
+{
+public:
+    npc_stormpeak_wyrm() : CreatureScript("npc_stormpeak_wyrm") { }
+
+    struct npc_stormpeak_wyrmAI : public Scripted_LandingAI
+    {
+        npc_stormpeak_wyrmAI(Creature* creature) : Scripted_LandingAI(creature) { }
+
+		void Reset()
+		{
+			Scripted_LandingAI::Reset();
+			spellTimer = urand(5000, 6000);
+		}
+
+		void UpdateAI(uint32 const diff)
+		{
+			if (!UpdateVictim())
+				return;
+
+			if (spellTimer < diff)
+			{
+				DoCastVictim(SPELL_FROST_SPIT);
+				spellTimer = urand(11000, 12000);
+			}
+			else
+				spellTimer -= diff;
+
+			DoMeleeAttackIfReady();
+		}
+
+		uint32 spellTimer;
+    };
+
+    CreatureAI *GetAI(Creature *creature) const
+    {
+        return new npc_stormpeak_wyrmAI(creature);
+    }
+};
+
 void AddSC_storm_peaks()
 {
     new npc_agnetta_tyrsdottar;
@@ -1312,4 +1357,5 @@ void AddSC_storm_peaks()
 	new npc_brann_q12973();
 	new npc_plane_q12973();
 	new npc_talk_brann_q12973();
+	new npc_stormpeak_wyrm();
 }
