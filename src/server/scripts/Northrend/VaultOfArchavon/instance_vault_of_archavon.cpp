@@ -50,7 +50,7 @@ class instance_archavon : public InstanceMapScript
 
             void OnPlayerEnter(Player *player)
             {
-                if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED))
+				if (sWorld->getBoolConfig(CONFIG_OUTDOORPVP_WINTERGRASP_ENABLED) && !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP))
                 {
                     OutdoorPvPWG *pvpWG = (OutdoorPvPWG*)sOutdoorPvPMgr->GetOutdoorPvPToZoneId(4197);
                     if (pvpWG && !player->isGameMaster() && player->GetTeamId() != pvpWG->getDefenderTeam())
