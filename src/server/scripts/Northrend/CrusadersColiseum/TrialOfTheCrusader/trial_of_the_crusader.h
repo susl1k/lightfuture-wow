@@ -44,13 +44,13 @@ const Position ToCSpawnLoc[]=
 
 const Position ToCCommonLoc[]=
 {
-    {559.257996f, 90.266197f, 395.122986f, 0},  //  0 Barrent
+    {559.257996f, 90.266197f, 395.122986f, 0},  //  0 Starter NPC-unused
 
     {563.672974f, 139.571f, 393.837006f, 0},    //  1 Center
-    {563.833008f, 187.244995f, 394.5f, 0},      //  2 Backdoor
-    {577.347839f, 195.338888f, 395.14f, 0},     //  3 - Right
-    {550.955933f, 195.338888f, 395.14f, 0},     //  4 - Left
-    {563.833008f, 195.244995f, 394.585561f, 0}, //  5 - Center
+    {563.833008f, 174.244995f, 394.5f, 0},      //  2 Main Gate in Ring
+    {577.347839f, 195.338888f, 395.14f, 0},     //  3 Main Gate Right-unused
+    {550.955933f, 195.338888f, 395.14f, 0},     //  4 Main Gate Left-unused
+    {563.833008f, 195.244995f, 394.585561f, 0}, //  5 Main Gate Center out Ring
     {573.5f, 180.5f, 395.14f, 0},               //  6 Move 0 Right
     {553.5f, 180.5f, 395.14f, 0},               //  7 Move 0 Left
     {585.5f, 170.0f, 395.14f, 0},               //  8 Move 1 Right

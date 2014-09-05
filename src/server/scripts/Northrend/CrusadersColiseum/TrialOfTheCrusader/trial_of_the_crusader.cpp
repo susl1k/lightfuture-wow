@@ -406,7 +406,7 @@ class npc_fizzlebang_toc : public CreatureScript
 			{
 				me->AddUnitMovementFlag(MOVEMENTFLAG_WALKING);
 				m_uiPortalGUID = 0;
-				me->GetMotionMaster()->MovePoint(1, ToCCommonLoc[10].GetPositionX(), ToCCommonLoc[10].GetPositionY()-60, ToCCommonLoc[10].GetPositionZ());
+				me->GetMotionMaster()->MovePoint(1, ToCCommonLoc[10].GetPositionX(), ToCCommonLoc[10].GetPositionY()-60, ToCCommonLoc[10].GetPositionZ(), false);
 			}
 
 			void MovementInform(uint32 uiType, uint32 uiId)
@@ -588,7 +588,7 @@ class npc_tirion_toc : public CreatureScript
 
 								if (Creature* temp = me->SummonCreature(NPC_GORMOK, ToCSpawnLoc[0].GetPositionX(), ToCSpawnLoc[0].GetPositionY(), ToCSpawnLoc[0].GetPositionZ(), 5, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 30*IN_MILLISECONDS))
 								{
-									temp->GetMotionMaster()->MovePoint(0, ToCCommonLoc[5].GetPositionX(), ToCCommonLoc[5].GetPositionY(), ToCCommonLoc[5].GetPositionZ());
+									temp->GetMotionMaster()->MovePoint(0, ToCCommonLoc[2].GetPositionX(), ToCCommonLoc[2].GetPositionY(), ToCCommonLoc[2].GetPositionZ(), false);
 									temp->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC);
 									temp->SetReactState(REACT_PASSIVE);
 								}
@@ -614,9 +614,9 @@ class npc_tirion_toc : public CreatureScript
 							if (m_instance->GetData(TYPE_BEASTS) != DONE)
 							{
 								m_instance->DoUseDoorOrButton(m_instance->GetData64(GO_MAIN_GATE_DOOR));
-								if (Creature* temp = me->SummonCreature(NPC_DREADSCALE, ToCSpawnLoc[1].GetPositionX(), ToCSpawnLoc[1].GetPositionY(), ToCSpawnLoc[1].GetPositionZ(), 5, TEMPSUMMON_MANUAL_DESPAWN))
+								if (Creature* temp = me->SummonCreature(NPC_DREADSCALE, ToCSpawnLoc[0].GetPositionX(), ToCSpawnLoc[0].GetPositionY(), ToCSpawnLoc[0].GetPositionZ(), 5, TEMPSUMMON_MANUAL_DESPAWN))
 								{
-									temp->GetMotionMaster()->MovePoint(0, ToCCommonLoc[8].GetPositionX(), ToCCommonLoc[8].GetPositionY(), ToCCommonLoc[8].GetPositionZ());
+									temp->GetMotionMaster()->MovePoint(0, ToCCommonLoc[8].GetPositionX(), ToCCommonLoc[8].GetPositionY(), ToCCommonLoc[8].GetPositionZ(), false);
 									temp->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
 									temp->SetReactState(REACT_PASSIVE);
 								}
@@ -767,12 +767,12 @@ class npc_tirion_toc : public CreatureScript
 							m_instance->DoUseDoorOrButton(m_instance->GetData64(GO_MAIN_GATE_DOOR));
 							if (Creature* temp = Unit::GetCreature((*me), m_instance->GetData64(NPC_LIGHTBANE)))
 							{
-								temp->GetMotionMaster()->MovePoint(1, ToCCommonLoc[8].GetPositionX(), ToCCommonLoc[8].GetPositionY(), ToCCommonLoc[8].GetPositionZ());
+								temp->GetMotionMaster()->MovePoint(1, ToCCommonLoc[8].GetPositionX(), ToCCommonLoc[8].GetPositionY(), ToCCommonLoc[8].GetPositionZ(), false);
 								temp->SetVisible(true);
 							}
 							if (Creature* temp = Unit::GetCreature((*me), m_instance->GetData64(NPC_DARKBANE)))
 							{
-								temp->GetMotionMaster()->MovePoint(1, ToCCommonLoc[9].GetPositionX(), ToCCommonLoc[9].GetPositionY(), ToCCommonLoc[9].GetPositionZ());
+								temp->GetMotionMaster()->MovePoint(1, ToCCommonLoc[9].GetPositionX(), ToCCommonLoc[9].GetPositionY(), ToCCommonLoc[9].GetPositionZ(), false);
 								temp->SetVisible(true);
 							}
 							m_uiUpdateTimer = 5000;

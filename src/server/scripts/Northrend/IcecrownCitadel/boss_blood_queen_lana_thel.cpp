@@ -354,12 +354,14 @@ class boss_blood_queen_lana_thel : public CreatureScript
 							break;
 						case EVENT_VAMPIRIC_BITE:
 						{
-							Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO, 1, 100.0f, true);
-							DoCast(target, SPELL_VAMPIRIC_BITE);
-							if (IsHeroic())
-								me->AddAura(SPELL_PRESENCE_OF_THE_DARKFALLEN, me);
-							Talk(SAY_VAMPIRIC_BITE);
-							_vampires.insert(target->GetGUID());
+							if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO, 1, 100.0f, true))
+							{
+								DoCast(target, SPELL_VAMPIRIC_BITE);
+								if (IsHeroic())
+									me->AddAura(SPELL_PRESENCE_OF_THE_DARKFALLEN, me);
+								Talk(SAY_VAMPIRIC_BITE);
+								_vampires.insert(target->GetGUID());
+							}
 							break;
 						}
 						case EVENT_BLOOD_MIRROR:

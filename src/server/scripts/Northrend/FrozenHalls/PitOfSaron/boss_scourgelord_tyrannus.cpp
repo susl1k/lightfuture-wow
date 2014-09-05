@@ -713,7 +713,7 @@ public:
 
 				if (gauntletEvents.ExecuteEvent() == EVENT_GAUNTLET_ICICLE)
 				{
-					for (uint8 i = 0; i < gauntletList.size()/11; i++)
+					for (uint8 i = 0; i < gauntletList.size()*9/110; i++)
 					{
 						std::list<Creature*>::iterator ite = gauntletList.begin();
 						std::advance(ite, urand(0, gauntletList.size()-1));
@@ -722,7 +722,7 @@ public:
 							trigger->CastSpell(trigger, SPELL_ICICLE_SPAWN, true);
 					}
 
-					gauntletEvents.ScheduleEvent(EVENT_GAUNTLET_ICICLE, 3000);
+					gauntletEvents.ScheduleEvent(EVENT_GAUNTLET_ICICLE, 3600);
 				}
 			}
 		}

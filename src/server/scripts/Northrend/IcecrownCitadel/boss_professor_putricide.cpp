@@ -1622,10 +1622,13 @@ class spell_stinky_precious_decimate : public SpellScriptLoader
 
 			void HandleScript(SpellEffIndex /*effIndex*/)
 			{
-				if (GetHitUnit()->GetHealthPct() > float(GetEffectValue()))
+				if (GetHitUnit()->ToPlayer() || GetHitUnit()->ToCreature() && GetHitUnit()->ToCreature()->GetEntry() == NPC_DECIMATE_ZOMBIE)
 				{
-					uint32 newHealth = GetHitUnit()->GetMaxHealth() * uint32(GetEffectValue()) / 100;
-					GetHitUnit()->SetHealth(newHealth);
+					if (GetHitUnit()->GetHealthPct() > float(GetEffectValue()))
+					{
+						uint32 newHealth = GetHitUnit()->GetMaxHealth() * uint32(GetEffectValue()) / 100;
+						GetHitUnit()->SetHealth(newHealth);
+					}
 				}
 			}
 

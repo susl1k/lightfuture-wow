@@ -1816,9 +1816,9 @@ class npc_chillmaw : public CreatureScript
 public:
     npc_chillmaw() : CreatureScript("npc_chillmaw") { }
 
-    struct npc_chillmawAI : public ScriptedAI
+    struct npc_chillmawAI : public Scripted_LandingAI
     {
-        npc_chillmawAI(Creature* creature) : ScriptedAI(creature), summons(creature) { }
+        npc_chillmawAI(Creature* creature) : Scripted_LandingAI(creature), summons(creature) { }
 		
 		SummonList summons;
 		
@@ -1830,6 +1830,7 @@ public:
 
         void Reset()
         {
+			Scripted_LandingAI::Reset();
 			frostBreathTimer = urand(10000, 11000);
 			winged = false;
 			dropped = 0;
@@ -1841,6 +1842,9 @@ public:
 		void JustSummoned(Creature* summon)
 		{
 			if (summon->GetEntry() == 2000140)
+				return;
+
+			if (!me->isInCombat())
 				return;
 			
 			summon->SetInCombatWith(me->getVictim());

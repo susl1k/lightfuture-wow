@@ -210,11 +210,13 @@ enum CreaturesIds
 	
 	//Plagueworks Trash
 	NPC_TRASH_VALKYR_HERALD                     = 37098,
+	NPC_TRASH_SEVERED_ESSENCE					= 38410,
 	NPC_TRASH_BLIGHTED_ABOM                     = 37022,
 	NPC_TRASH_PLAGUE_SCIENTIST                  = 37023,
 	NPC_TRASH_VENGEFUL_FLESH                    = 37038,
 	NPC_TRASH_PUSTULATING_HORROR                = 10404,
 	NPC_TRASH_DECAYING_COLOSSUS                 = 36880,
+	NPC_DECIMATE_ZOMBIE							= 38104,
 
     // Festergut
     NPC_FESTERGUT                               = 36626,

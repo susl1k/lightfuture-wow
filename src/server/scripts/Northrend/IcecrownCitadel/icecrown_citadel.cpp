@@ -1833,6 +1833,18 @@ enum TrashSpells {
 	SPELL_DARK_RECKONING = 69483,
 	//Upper Spire
 	SPELL_SEVERED_ESSENCE = 71906,
+	SPELL_BLOOD_PLAGUE = 71923,
+	SPELL_BLOODTHIRST_DMG = 57791,
+	SPELL_BLOODTHIRST_HEAL = 71938,
+	SPELL_CORRUPTION = 71937,
+	SPELL_EVISCERATE = 71933,
+	SPELL_HEROIC_LEAP = 71960,
+	SPELL_LIGHTNING_BOLT = 71934,
+	SPELL_NECROTIC_STRIKE = 71951,
+	SPELL_RADIANCE_AURA = 71953,
+	SPELL_RAIN_OF_CHAOS = 71965,
+	SPELL_REPLEMISHING_RAINS = 71956,
+	SPELL_SINISTER_STRIKE = 57640,
 	//Plagueworks
 	SPELL_TRASH_CLEAVE = 40504,
 	SPELL_PLAGUE_CLOUD = 71150,
@@ -2080,14 +2092,16 @@ class npc_plagueworks : public CreatureScript
 		EventMap _events;
 		uint64 leapGUID;
 		
-		void EnterCombat(Unit* /*attacker*/)
+		void EnterCombat(Unit* attacker)
 		{
 			_events.Reset();
 			leapGUID=0;
 			switch (me->GetEntry())
 			{
 				case NPC_TRASH_VALKYR_HERALD:
-					//_events.ScheduleEvent(EVENT_SEVERED_ESSENCE, urand(10000, 15000));
+					_events.ScheduleEvent(EVENT_SEVERED_ESSENCE, urand(10000, 15000));
+					me->GetMotionMaster()->MoveIdle();
+					me->GetMotionMaster()->MoveCharge(attacker->GetPositionX(), attacker->GetPositionY(), attacker->GetPositionZ(), me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
 				break;
 				case NPC_TRASH_BLIGHTED_ABOM:
 					_events.ScheduleEvent(EVENT_TRASH_CLEAVE, urand(2500, 5000));
@@ -2110,6 +2124,30 @@ class npc_plagueworks : public CreatureScript
 				break;
 			}
 		}
+
+		void MovementInform(uint32 type, uint32 point)
+		{
+			if (me->GetEntry() == NPC_TRASH_VALKYR_HERALD)
+			{
+				if (point == EVENT_CHARGE)
+				{
+					me->SetCanFly(false);
+					me->SetDisableGravity(false);
+					me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+				}
+			}
+		}
+
+		void Reset()
+		{
+			if (me->GetEntry() == NPC_TRASH_VALKYR_HERALD)
+			{
+					me->SetCanFly(true);
+					me->SetDisableGravity(true);
+					me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+					me->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+			}
+		}
 		
 		void DamageTaken(Unit* /*attacker*/, uint32& damage)
 		{
@@ -2117,6 +2155,65 @@ class npc_plagueworks : public CreatureScript
 				if (me->HealthBelowPctDamaged(25, damage))
 					if (!me->HasUnitState(UNIT_STATE_CASTING))
 						DoCastAOE(SPELL_BLIGHT_BOMB);
+		}
+
+		void SpellHitTarget(Unit* target, const SpellInfo* spell) override
+		{
+			if (me->GetEntry() == NPC_TRASH_VALKYR_HERALD)
+				if (spell->Id == SPELL_SEVERED_ESSENCE)
+					me->SummonCreature(NPC_TRASH_SEVERED_ESSENCE, *target, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5000);
+		}
+
+		void JustSummoned(Creature* summon)
+		{
+			if (me->GetEntry() == NPC_TRASH_VALKYR_HERALD)
+			{
+				if (summon->GetEntry() == NPC_TRASH_SEVERED_ESSENCE)
+				{
+					summon->AI()->SetGUID(leapGUID);
+					DoZoneInCombat(summon);
+				}
+			}
+		}
+
+		void SetGUID(uint64 guid, int32 type = 0)
+		{
+			if (Player* target = Unit::GetPlayer(*me, guid))
+			{
+				target->CastSpell(me, 45204, true);
+				switch (target->getClass())
+				{
+					case CLASS_PALADIN:
+						DoCastAOE(SPELL_RADIANCE_AURA);
+						break;
+					case CLASS_WARLOCK:
+						_events.ScheduleEvent(SPELL_SHADOW_BOLT, 2000);
+						_events.ScheduleEvent(SPELL_CORRUPTION, 5000);
+						_events.ScheduleEvent(SPELL_RAIN_OF_CHAOS, 5500);
+						break;
+					case CLASS_MAGE:
+						_events.ScheduleEvent(SPELL_FIREBALL, 2000);
+						break;
+					case CLASS_ROGUE:
+						_events.ScheduleEvent(SPELL_EVISCERATE, 5000);
+						_events.ScheduleEvent(SPELL_SINISTER_STRIKE, 2000);
+						break;
+					case CLASS_WARRIOR:
+						_events.ScheduleEvent(SPELL_BLOODTHIRST_DMG, 2500);
+						_events.ScheduleEvent(SPELL_HEROIC_LEAP, 2000);
+						break;
+					case CLASS_DRUID:
+						_events.ScheduleEvent(SPELL_REPLEMISHING_RAINS, 3000);
+						break;
+					case CLASS_SHAMAN:
+						_events.ScheduleEvent(SPELL_LIGHTNING_BOLT, 2000);
+						break;
+					case CLASS_DEATH_KNIGHT:
+						_events.ScheduleEvent(SPELL_BLOOD_PLAGUE, 2000);
+						_events.ScheduleEvent(SPELL_NECROTIC_STRIKE, 5000);
+						break;
+				}
+			}
 		}
 		
 		void UpdateAI(const uint32 uiDiff)
@@ -2134,8 +2231,12 @@ class npc_plagueworks : public CreatureScript
 				switch (eventId)
 				{
 					case EVENT_SEVERED_ESSENCE:
+						leapGUID = 0;
 						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+						{
+							leapGUID = target->GetGUID();
 							DoCast(target, SPELL_SEVERED_ESSENCE);
+						}
 						_events.ScheduleEvent(EVENT_SEVERED_ESSENCE, 15000);
 					break;
 					case EVENT_TRASH_CLEAVE:
@@ -2195,6 +2296,67 @@ class npc_plagueworks : public CreatureScript
 						DoCastAOE(SPELL_MASSIVE_STOMP);
 						_events.ScheduleEvent(EVENT_MASSIVE_STOMP, 15000);
 					break;
+					case SPELL_SHADOW_BOLT:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_SHADOW_BOLT);
+						_events.ScheduleEvent(SPELL_SHADOW_BOLT, 5000);
+						break;
+					case SPELL_CORRUPTION:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 30.0f))
+							DoCast(target, SPELL_CORRUPTION);
+						_events.ScheduleEvent(SPELL_CORRUPTION, 5000);
+						break;
+					case SPELL_RAIN_OF_CHAOS:
+						DoCastAOE(SPELL_RAIN_OF_CHAOS);
+						_events.ScheduleEvent(SPELL_RAIN_OF_CHAOS, 15000);
+						break;
+					case SPELL_FIREBALL:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_FIREBALL);
+						_events.ScheduleEvent(SPELL_FIREBALL, 5000);
+						break;
+					case SPELL_EVISCERATE:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f))
+							DoCast(target, SPELL_EVISCERATE);
+						_events.ScheduleEvent(SPELL_EVISCERATE, 5000);
+						break;
+					case SPELL_SINISTER_STRIKE:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f))
+							DoCast(target, SPELL_SINISTER_STRIKE);
+						_events.ScheduleEvent(SPELL_SINISTER_STRIKE, 5000);
+						break;
+					case SPELL_BLOODTHIRST_DMG:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f))
+						{
+							DoCast(target, SPELL_BLOODTHIRST_DMG);
+							DoCast(me, SPELL_BLOODTHIRST_HEAL);
+						}
+						_events.ScheduleEvent(SPELL_BLOODTHIRST_DMG, 5000);
+						break;
+					case SPELL_HEROIC_LEAP:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_HEROIC_LEAP);
+						_events.ScheduleEvent(SPELL_HEROIC_LEAP, 5000);
+						break;
+					case SPELL_REPLEMISHING_RAINS:
+						DoCastAOE(SPELL_REPLEMISHING_RAINS);
+						_events.ScheduleEvent(SPELL_REPLEMISHING_RAINS, 15000);
+						break;
+					case SPELL_LIGHTNING_BOLT:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_LIGHTNING_BOLT);
+						_events.ScheduleEvent(SPELL_LIGHTNING_BOLT, 5000);
+						break;
+					case SPELL_BLOOD_PLAGUE:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f))
+							DoCast(target, SPELL_BLOOD_PLAGUE);
+						_events.ScheduleEvent(SPELL_BLOOD_PLAGUE, 5000);
+						break;
+					case SPELL_NECROTIC_STRIKE:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f))
+							DoCast(target, SPELL_NECROTIC_STRIKE);
+						_events.ScheduleEvent(SPELL_NECROTIC_STRIKE, 5000);
+						break;
 				}
 			}
 			

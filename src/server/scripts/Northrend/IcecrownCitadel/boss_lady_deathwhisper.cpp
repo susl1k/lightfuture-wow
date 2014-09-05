@@ -500,7 +500,7 @@ class boss_lady_deathwhisper : public CreatureScript
 				uint8 addIndexOther = uint8(addIndex ^ 1);
 
 				// Summon first add, replace it with Darnavan if weekly quest is active
-				if (_waveCounter || !sPoolMgr->IsSpawnedObject<Quest>(QUEST_DEPROGRAMMING))
+				if (_waveCounter || sWorld->getWorldState(RAID_MODE(WS_ICC_WEEKLY_10, WS_ICC_WEEKLY_25)) != 1)
 					Summon(SummonEntries[addIndex], SummonPositions[addIndex * 3]);
 				else
 					Summon(NPC_DARNAVAN, SummonPositions[addIndex * 3]);

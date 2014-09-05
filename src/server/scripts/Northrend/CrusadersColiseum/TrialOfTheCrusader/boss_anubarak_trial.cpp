@@ -85,8 +85,6 @@ enum BossSpells
 	SPELL_SUBMERGE_EFFECT   = 53421,
 	SPELL_EMERGE_EFFECT     = 66947,
 
-	SUMMON_SCARAB           = NPC_SCARAB,
-	SUMMON_FROSTSPHERE      = NPC_FROST_SPHERE,
 	SPELL_BERSERK           = 26662,
 
 	//Frost Sphere
@@ -222,15 +220,17 @@ public:
 					BurrowGUIDs.push_back(summoned->GetGUID());
 					summoned->SetReactState(REACT_PASSIVE);
 					summoned->CastSpell(summoned, SPELL_CHURNING_GROUND, false);
-				break;
+					break;
 				case NPC_SPIKE:
+					summoned->GetMotionMaster()->MoveChase(target);
 					summoned->AI()->EnterCombat(target);
 					DoScriptText(EMOTE_SPIKE, me, target);
-				break;
+					break;
 				case NPC_SCARAB:
 					if (m_uiStage != 2)
 					{
 						summoned->SetReactState(REACT_PASSIVE);
+						summoned->GetMotionMaster()->MoveRandom(5.0f);
 					}
 					else
 					{
@@ -238,7 +238,7 @@ public:
 						summoned->SetInCombatWithZone();
 						summoned->AddThreat(target, 20000.0f);
 					}
-				break;
+					break;
 			}
 			Summons.Summon(summoned);
 		}
@@ -265,8 +265,8 @@ public:
 				me->SummonCreature(NPC_BURROW, AnubarakLoc[i]);
 			//Spawn Frost Spheres
 			for (int i=0; i < 6; i++)
-				if (Unit* summoned = me->SummonCreature(NPC_FROST_SPHERE, SphereSpawn[i]))
-					SphereGUIDs[i] = summoned->GetGUID();
+				if (Creature* sphere = me->SummonCreature(NPC_FROST_SPHERE, SphereSpawn[i]))
+					SphereGUIDs[i] = sphere->GetGUID();
 		}
 
 		void UpdateAI(const uint32 uiDiff)
@@ -285,6 +285,7 @@ public:
 				DoCastAOE(SPELL_LEECHING_SWARM);
 				DoScriptText(EMOTE_LEECHING_SWARM, me);
 				DoScriptText(SAY_LEECHING_SWARM, me);
+				return;
 			}
 			
 			while (uint32 eventId = _events.ExecuteEvent()) {
@@ -292,9 +293,8 @@ public:
 					case EVENT_SUMMON_SCARAB:
 					{
 						std::list<uint64>::iterator ite = BurrowGUIDs.begin();
-						uint32 at = urand(0, BurrowGUIDs.size()-1);
-						for (uint32 k = 0; k < at; k++)
-							ite++;
+						std::advance(ite, urand(0, BurrowGUIDs.size() - 1));
+
 						if (Creature* pBurrow = Unit::GetCreature(*me, *ite))
 							me->SummonCreature(NPC_SCARAB, 	pBurrow->GetPositionX()+5.0f-float(rand_norm())*10.0f, 
 																				pBurrow->GetPositionY()+5.0f-float(rand_norm())*10.0f, 
@@ -306,14 +306,20 @@ public:
 					}
 					case EVENT_SUMMON_SPHERE:
 					{
-						for (uint8 i=0;i<6;i++)
-							if (Unit* pSphere = Unit::GetCreature(*me, SphereGUIDs[i]))
-								if (pSphere->HasAura(SPELL_PERMAFROST))
-									if (Creature* summon = me->SummonCreature(NPC_FROST_SPHERE, SphereSpawn[i]))
-									{
-										SphereGUIDs[i] = summon->GetGUID();
-										break;
-									}
+						for (uint8 i = 0; i < 6; i++)
+						{
+							Creature* pSphere = Unit::GetCreature(*me, SphereGUIDs[i]);
+							if (!pSphere || pSphere && pSphere->AI()->GetData(0))
+							{
+								if (Creature* newSphere = me->SummonCreature(NPC_FROST_SPHERE, SphereSpawn[i]))
+								{
+									if (pSphere)
+										pSphere->DespawnOrUnsummon();
+									SphereGUIDs[i] = newSphere->GetGUID();
+									break;
+								}
+							}
+						}
 						_events.ScheduleEvent(EVENT_SUMMON_SPHERE, urand(20000,30000));
 						break;
 					}
@@ -344,7 +350,7 @@ public:
 								if (IsHeroic() || !m_bReachedPhase3) {
 									for (uint8 i=0;i<RAID_MODE(1, 2, 2, 4);i++) {
 										uint8 rand=urand(2,5);
-										me->SummonCreature(NPC_BURROWER, AnubarakLoc[rand], TEMPSUMMON_CORPSE_DESPAWN , 1000);
+										me->SummonCreature(NPC_BURROWER, AnubarakLoc[rand], TEMPSUMMON_CORPSE_TIMED_DESPAWN , 1000);
 									}
 									_events.ScheduleEvent(EVENT_SUMMON_BURROWER, 45000);
 								}
@@ -447,10 +453,14 @@ public:
 			if (actionId != ACTION_ATTAAAAAACK)
 				return;
 			
+			me->GetMotionMaster()->Clear();
 			me->SetReactState(REACT_AGGRESSIVE);
 			me->SetInCombatWithZone();
 			if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM))
+			{
+				me->GetMotionMaster()->MoveChase(target);
 				me->AddThreat(target, 20000.0f);
+			}
 		}
 		
 		void UpdateAI(const uint32 uiDiff)
@@ -502,7 +512,7 @@ public:
 			DoCast(me, SPELL_SPIDER_FRENZY);
 			me->SetInCombatWithZone();
 			if (!me->isInCombat())
-				me->DisappearAndDie();
+				me->DespawnOrUnsummon();
 		}
 
 		void DoAction(const int32 actionId)
@@ -535,7 +545,6 @@ public:
 					me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
 					m_uiSubmergeTimer = 30*IN_MILLISECONDS;
 				}
-				
 				else if (HealthBelowPct(60))
 				{
 					if (!me->HasAura(66193) && !me->HasAura(67855) && !me->HasAura(67856) && !me->HasAura(67857))
@@ -565,13 +574,13 @@ public:
 		return new mob_frost_sphereAI(creature);
 	};
 
-	struct mob_frost_sphereAI : public ScriptedAI
+	struct mob_frost_sphereAI : public PassiveAI
 	{
-		mob_frost_sphereAI(Creature* creature) : ScriptedAI(creature)
+		mob_frost_sphereAI(Creature* creature) : PassiveAI(creature)
 		{
 		}
 
-		bool   m_bFall;
+		bool m_bFall;
 
 		void Reset()
 		{
@@ -582,9 +591,7 @@ public:
 			me->SetDisplayId(25144);
 			me->SetSpeed(MOVE_RUN, 0.5f, false);
 			me->GetMotionMaster()->MoveRandom(20.0f);
-			me->SetRespawnDelay(7*DAY);
 			me->SetFloatValue(OBJECT_FIELD_SCALE_X, 2.0f);
-			//me->AddAura(SPELL_FROST_SPHERE, me);
 		}
 
 		void DamageTaken(Unit* /*who*/, uint32& uiDamage)
@@ -592,6 +599,7 @@ public:
 			if (me->GetHealth() < uiDamage)
 			{
 				uiDamage = 0;
+
 				if (!m_bFall)
 				{
 					m_bFall = true;
@@ -611,15 +619,23 @@ public:
 			switch (pointId)
 			{
 				case POINT_FALL_GROUND:
-					me->RemoveAurasDueToSpell(SPELL_FROST_SPHERE);
-					//me->SetDisplayId(me->GetCreatureTemplate()->Modelid1);
 					me->SetDisplayId(1126);
 					DoCast(SPELL_PERMAFROST_VISUAL);
 					DoCast(SPELL_PERMAFROST);
-					me->SetFloatValue(OBJECT_FIELD_SCALE_X, 2.0f);//???
-					//me->SetObjectScale(2.0f);
 					 break;
 			}
+		}
+
+		void UpdateAI(uint32 const diff)
+		{
+			if (me->GetInstanceScript())
+				if (me->GetInstanceScript()->GetData(TYPE_ANUBARAK) != IN_PROGRESS)
+					me->DespawnOrUnsummon();
+		}
+
+		uint32 GetData(uint32 type) override
+		{
+			return (uint32) (m_bFall && !me->HasAura(SPELL_PERMAFROST_VISUAL));
 		}
 	};
 
@@ -640,6 +656,7 @@ public:
 		mob_anubarak_spikeAI(Creature* creature) : ScriptedAI(creature)
 		{
 			m_instance = (InstanceScript*)creature->GetInstanceScript();
+			me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 		}
 
 		InstanceScript* m_instance;
@@ -650,8 +667,7 @@ public:
 		void Reset()
 		{
 			// For an unknown reason this npc isn't recognize the Aura of Permafrost with this flags =/
-			me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-			me->RemoveFlag(UNIT_FIELD_FLAGS, /*UNIT_FLAG_NON_ATTACKABLE | */UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_IMMUNE_TO_PC);
+			me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
 			me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_TAUNT, true);
 			me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_ATTACK_ME, true);
 			m_uiTargetGUID = 0;
@@ -659,7 +675,6 @@ public:
 
 		void EnterCombat(Unit* who)
 		{
-		
 			m_uiTargetGUID = who->GetGUID();
 		
 			DoCast(who, SPELL_MARK);
@@ -681,7 +696,7 @@ public:
 			{
 				if (Creature* pAnubarak = Unit::GetCreature((*me), m_instance->GetData64(NPC_ANUBARAK)))
 					pAnubarak->CastSpell(pAnubarak, SPELL_SPIKE_TELE, false);
-				me->DisappearAndDie();
+				me->DespawnOrUnsummon();
 				return;
 			}
 

@@ -1958,6 +1958,7 @@ class npc_sergeant : public CreatureScript
 			npc_sergeantAI(Creature *creature) : ScriptedAI(creature),_instance(creature->GetInstanceScript())
 			{
 				Reset();
+				me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 			}
 
 			void Reset()
@@ -2085,6 +2086,7 @@ class npc_marine_or_reaver : public CreatureScript
 			npc_marine_or_reaverAI(Creature *creature) : ScriptedAI(creature), _instance(creature->GetInstanceScript())
 			{
 				Reset();
+				me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 			}
 
 			void Reset()
@@ -3578,16 +3580,6 @@ class npc_commander : public CreatureScript
 				Reset();
 			}
 
-			void NastavitFrakci()
-			{
-				/*
-				if (!friendly)
-					me->setFaction(21);
-				else
-					me->setFaction(35);
-				*/
-			}
-
 			void EnterCombat(Unit* attacker)
 			{
 				if (!friendly)
@@ -3596,6 +3588,7 @@ class npc_commander : public CreatureScript
 					DoCast(70339);
 
 				ScriptedAI::EnterCombat(attacker);
+				me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 			}
 			
 			void Reset()
@@ -3605,12 +3598,12 @@ class npc_commander : public CreatureScript
 				ThrowEventScheduled = false;
 
 				ScriptedAI::Reset();
+				me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
 			}
 
 			void SetData(uint32 type, uint32 data)
 			{
 				friendly = data;
-				NastavitFrakci();
 			}
 			
 			void DamageTaken(Unit* /*attacker*/, uint32& damage)
