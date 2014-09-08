@@ -491,14 +491,14 @@ void BossAI::_JustDied()
     }
 }
 
-void BossAI::_EnterCombat()
+void BossAI::_EnterCombat(Unit* who)
 {
     me->setActive(true);
     DoZoneInCombat();
     if (instance)
     {
         // bosses do not respawn, check only on enter combat
-        if (!instance->CheckRequiredBosses(_bossId))
+        if (!instance->CheckRequiredBosses(_bossId, who ? who->ToPlayer() : NULL))
         {
             EnterEvadeMode();
             return;
@@ -656,17 +656,24 @@ void WorldBossAI::UpdateAI(uint32 const diff)
 
 void Scripted_LandingAI::EnterCombat(Unit* attacker)
 {
-	me->GetMotionMaster()->MoveIdle();
-	me->GetMotionMaster()->MoveCharge(attacker->GetPositionX(), attacker->GetPositionY(), attacker->GetPositionZ(), me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
+	me->GetMotionMaster()->Clear();
+	me->GetMotionMaster()->MoveCharge(attacker->GetPositionX(), attacker->GetPositionY(), attacker->GetPositionZ() + 4.0f, me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
 }
 
 void Scripted_LandingAI::MovementInform(uint32 type, uint32 point)
 {
-	if (type == POINT_MOTION_TYPE && point == EVENT_CHARGE)
+	if (point == EVENT_CHARGE)
 	{
-		me->SetCanFly(false);
-		me->SetDisableGravity(false);
-		me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+		if (type == POINT_MOTION_TYPE)
+		{
+			me->m_Events.AddEvent(new Scripted_LandingAI_LandEvent(*me, EVENT_CHARGE), me->m_Events.CalculateTime(10));
+		}
+		else if (EFFECT_MOTION_TYPE)
+		{
+			me->SetCanFly(false);
+			me->SetDisableGravity(false);
+			me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+		}
 	}
 }
 

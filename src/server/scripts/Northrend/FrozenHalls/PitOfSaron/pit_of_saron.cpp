@@ -167,6 +167,7 @@ class mob_geist_ambusher : public CreatureScript
 
             void EnterCombat(Unit* who)
             {
+				me->AddUnitState(UNIT_STATE_IGNORE_PATHFINDING);
                 if (who->GetTypeId() != TYPEID_PLAYER)
                     return;
 
@@ -175,6 +176,14 @@ class mob_geist_ambusher : public CreatureScript
                     DoCast(who, SPELL_LEAPING_FACE_MAUL);
             }
 
+			void MoveInLineOfSight(Unit* who)
+			{
+				if (me->GetDistance(who) < 50.0f)
+					if (!me->isInCombat())
+						if (who->ToPlayer())
+							AttackStart(who);
+			}
+
             void UpdateAI(const uint32 diff)
             {
                 if (!UpdateVictim())
@@ -182,7 +191,7 @@ class mob_geist_ambusher : public CreatureScript
 
                 if (_leapingFaceMaulCooldown < diff)
                 {
-                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 5.0f, true))
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, -5.0f, true))
                         DoCast(target, SPELL_LEAPING_FACE_MAUL);
                     _leapingFaceMaulCooldown = urand(9000, 14000);
                 }

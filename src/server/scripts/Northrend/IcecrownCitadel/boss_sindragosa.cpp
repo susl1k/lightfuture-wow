@@ -254,7 +254,7 @@ class boss_sindragosa : public CreatureScript
 				if (Unit* spinestalker = Unit::GetUnit(*me, instance->GetData64(DATA_SPINESTALKER)))
 					if (!spinestalker->isAlive())
 						spinestalker->SetVisible(false);
-				BossAI::EnterCombat(victim);
+				_EnterCombat(victim);
 				DoCast(me, SPELL_FROST_AURA);
 				DoCast(me, SPELL_PERMAEATING_CHILL);
 				Talk(SAY_AGGRO);

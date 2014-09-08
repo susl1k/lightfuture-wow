@@ -1912,11 +1912,6 @@ class npc_lower_spire : public CreatureScript
 				case NPC_TRASH_DAMNED:
 					_events.ScheduleEvent(EVENT_BONE_FLURRY, urand(5000, 7500));
 				break;
-				case NPC_TRASH_NERUBAN:
-					_events.ScheduleEvent(EVENT_CRYPT_SCARABS, urand(5000, 7500));
-					_events.ScheduleEvent(EVENT_DARK_MENDING, urand(7500, 10000));
-					_events.ScheduleEvent(EVENT_WEB_TRAP, urand(2500, 5000));
-				break;
 				case NPC_TRASH_SERVANT:
 					_events.ScheduleEvent(EVENT_GLACIAL_BLAST, urand(5000, 7500));
 				break;
@@ -1976,25 +1971,6 @@ class npc_lower_spire : public CreatureScript
 					case EVENT_BONE_FLURRY:
 						me->AddAura(SPELL_BONE_FLURRY, me);
 						_events.ScheduleEvent(EVENT_BONE_FLURRY, 20000);
-					break;
-					case EVENT_CRYPT_SCARABS:
-						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
-							DoCast(target, SPELL_CRYPT_SCARABS);
-						_events.ScheduleEvent(EVENT_CRYPT_SCARABS, 15000);
-					break;
-					case EVENT_DARK_MENDING:
-						if (Unit* target = DoSelectLowestHpFriendly(40.0f, 50000)) {
-							DoCast(target, SPELL_DARK_MENDING);
-							_events.ScheduleEvent(EVENT_DARK_MENDING, 20000);
-							break;
-						}
-						//no target-check in 2 seconds again
-						_events.ScheduleEvent(EVENT_DARK_MENDING, 2000);
-					break;
-					case EVENT_WEB_TRAP:
-						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
-							DoCast(target, SPELL_WEB_TRAP);
-						_events.ScheduleEvent(EVENT_WEB_TRAP, 20000);
 					break;
 					case EVENT_GLACIAL_BLAST:
 						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
@@ -2075,6 +2051,89 @@ class npc_lower_spire : public CreatureScript
 		{
 		return new npc_lower_spireAI(creature);
 		}
+};
+
+class npc_nerubar_broodkeeper : public CreatureScript
+{
+public:
+	npc_nerubar_broodkeeper() : CreatureScript("npc_nerubar_broodkeeper") { }
+
+	struct npc_nerubar_broodkeeperAI : public Scripted_LandingAI
+	{
+		npc_nerubar_broodkeeperAI(Creature* creature) : Scripted_LandingAI(creature)
+		{
+				
+		}
+
+		EventMap _events;
+		
+		void EnterCombat(Unit* attacker)
+		{
+			_events.Reset();
+			_events.ScheduleEvent(EVENT_CRYPT_SCARABS, urand(5000, 7500) + 6000);
+			_events.ScheduleEvent(EVENT_DARK_MENDING, urand(7500, 10000) + 6000);
+			_events.ScheduleEvent(EVENT_WEB_TRAP, urand(2500, 5000) + 6000);
+			me->GetMotionMaster()->MoveCharge(me->GetPositionX(),
+				me->GetPositionY(),
+				me->GetMap()->GetHeight(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ()) + 4.0f,
+				me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
+		}
+
+		void MoveInLineOfSight(Unit* who)
+		{
+			if (!me->isInCombat())
+				if (who->ToPlayer())
+					if (me->GetExactDist(who) < 60.0f)
+						AttackStart(who);
+		}
+	
+		void UpdateAI(const uint32 uiDiff)
+		{
+			if (!UpdateVictim())
+				return;
+
+			if (me->HasUnitState(UNIT_STATE_CHARGING))
+				return;
+			
+			_events.Update(uiDiff);
+			
+			if (me->HasUnitState(UNIT_STATE_CASTING) || me->HasAuraType(SPELL_AURA_MOD_STUN))
+				return;
+			
+			while (uint32 eventId = _events.ExecuteEvent())
+			{
+				switch (eventId)
+				{
+					case EVENT_CRYPT_SCARABS:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_CRYPT_SCARABS);
+						_events.ScheduleEvent(EVENT_CRYPT_SCARABS, 15000);
+					break;
+					case EVENT_DARK_MENDING:
+						if (Unit* target = DoSelectLowestHpFriendly(40.0f, 50000)) {
+							DoCast(target, SPELL_DARK_MENDING);
+							_events.ScheduleEvent(EVENT_DARK_MENDING, 20000);
+							break;
+						}
+						//no target-check in 2 seconds again
+						_events.ScheduleEvent(EVENT_DARK_MENDING, 2000);
+					break;
+					case EVENT_WEB_TRAP:
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+							DoCast(target, SPELL_WEB_TRAP);
+						_events.ScheduleEvent(EVENT_WEB_TRAP, 20000);
+					break;
+				}
+			}
+			
+			DoMeleeAttackIfReady();
+		}
+	};
+	
+	CreatureAI* GetAI(Creature* creature) const
+	{
+		return new npc_nerubar_broodkeeperAI(creature);
+	}
 };
 
 class npc_plagueworks : public CreatureScript
@@ -3181,6 +3240,7 @@ void AddSC_icecrown_citadel()
 	new npc_impaling_spear();
 	new npc_arthas_teleport_visual();
 	new npc_lower_spire();
+	new npc_nerubar_broodkeeper();
 	new npc_plagueworks();
 	new npc_crimson_halls();
 	new npc_frostwing_halls();

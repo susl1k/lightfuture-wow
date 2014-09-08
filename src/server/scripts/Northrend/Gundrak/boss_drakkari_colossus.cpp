@@ -146,12 +146,12 @@ class boss_drakkari_colossus : public CreatureScript
                         DoCast(SPELL_EMERGE);
                         break;
                     case ACTION_FREEZE_COLOSSUS:
-						me->GetMotionMaster()->Clear();
-                        me->GetMotionMaster()->MoveIdle();
-
                         me->SetReactState(REACT_PASSIVE);
                         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
                         DoCast(me, SPELL_FREEZE_ANIM);
+
+						me->GetMotionMaster()->Clear();
+                        me->GetMotionMaster()->MoveIdle();
                         break;
                     case ACTION_UNFREEZE_COLOSSUS:
 
@@ -165,7 +165,7 @@ class boss_drakkari_colossus : public CreatureScript
                         me->SetInCombatWithZone();
 
                         if (me->getVictim())
-                            me->GetMotionMaster()->MoveChase(me->getVictim(), 0, 0);
+                            me->GetMotionMaster()->MoveChase(me->getVictim());
 
                         break;
                 }
@@ -176,18 +176,24 @@ class boss_drakkari_colossus : public CreatureScript
                 if (me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC))
                     damage = 0;
 
+
                 if (phase == COLOSSUS_PHASE_NORMAL ||
                     phase == COLOSSUS_PHASE_FIRST_ELEMENTAL_SUMMON)
                 {
-					if (me->HealthBelowPctDamaged(phase == COLOSSUS_PHASE_NORMAL ? 50 : 5, damage))
+					uint32 treshhold = phase == COLOSSUS_PHASE_NORMAL ? 50 : 5;
+
+					if (me->HealthBelowPctDamaged(treshhold, damage))
                     {
-                        damage = 0;
+						damage = me->GetHealth() - (me->GetMaxHealth() * treshhold / 100);
                         phase = (phase == COLOSSUS_PHASE_NORMAL ? COLOSSUS_PHASE_FIRST_ELEMENTAL_SUMMON : COLOSSUS_PHASE_SECOND_ELEMENTAL_SUMMON);
                         DoAction(ACTION_FREEZE_COLOSSUS);
                         DoAction(ACTION_SUMMON_ELEMENTAL);
 
                     }
                 }
+
+				if (damage > me->GetHealth())
+					damage = me->GetHealth() - 1;
             }
 
             uint32 GetData(uint32 data)
@@ -317,7 +323,7 @@ class boss_drakkari_elemental : public CreatureScript
                     {
                         if (colossus->AI()->GetData(DATA_COLOSSUS_PHASE) ==  COLOSSUS_PHASE_FIRST_ELEMENTAL_SUMMON)
                         {
-                            damage = 0;
+							damage = me->GetHealth() - me->GetMaxHealth() / 2;
 
                             // to prevent spell spaming
                             if (me->HasUnitState(UNIT_STATE_CHARGING))

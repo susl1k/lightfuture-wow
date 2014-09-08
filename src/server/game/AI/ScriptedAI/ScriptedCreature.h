@@ -297,13 +297,13 @@ class BossAI : public ScriptedAI
         virtual void ExecuteEvent(uint32 const /*eventId*/) { }
 
         void Reset() { _Reset(); }
-        void EnterCombat(Unit* /*who*/) { _EnterCombat(); }
+        void EnterCombat(Unit* who) { _EnterCombat(); }
         void JustDied(Unit* /*killer*/) { _JustDied(); }
         void JustReachedHome() { _JustReachedHome(); }
 
     protected:
         void _Reset();
-        void _EnterCombat();
+        void _EnterCombat(Unit* who = NULL);
         void _JustDied();
         void _JustReachedHome() { me->setActive(false); }
 
@@ -359,8 +359,27 @@ class WorldBossAI : public ScriptedAI
 
 struct Scripted_LandingAI : public ScriptedAI
 {
-    Scripted_LandingAI(Creature* creature) : ScriptedAI(creature) {}
-    virtual ~Scripted_LandingAI() {}
+	class Scripted_LandingAI_LandEvent : public BasicEvent
+	{
+		public:
+			Scripted_LandingAI_LandEvent(Creature& owner, uint32 point) : _owner(owner), _point(point) { }
+
+			bool Execute(uint64 /*eventTime*/, uint32 /*updateTime*/)
+			{
+				Position pos;
+				float z = _owner.GetMap()->GetHeight(_owner.GetPositionX(), _owner.GetPositionY(), _owner.GetPositionZ());
+				pos.Relocate(_owner.GetPositionX(), _owner.GetPositionY(), z);
+				_owner.GetMotionMaster()->MoveLand(_point, pos, 4.0f);
+				return true;
+			}
+
+		private:
+			Creature& _owner;
+			uint32 _point;
+	};
+
+    Scripted_LandingAI(Creature* creature) : ScriptedAI(creature) { }
+    virtual ~Scripted_LandingAI() { }
 
 	void EnterCombat(Unit* attacker) override;
 

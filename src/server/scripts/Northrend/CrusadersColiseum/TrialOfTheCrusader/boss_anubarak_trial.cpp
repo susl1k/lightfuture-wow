@@ -172,7 +172,6 @@ public:
 			_events.ScheduleEvent(EVENT_PENETRATING_COLD, 15000);
 			_events.ScheduleEvent(EVENT_SUMMON_BURROWER, 10000);
 			_events.ScheduleEvent(EVENT_SUBMERGE, 80000);
-			_events.ScheduleEvent(EVENT_SUMMON_SCARAB, 2000);
 			_events.ScheduleEvent(EVENT_BERSERK, 600000);
 			if (IsHeroic())
 				_events.ScheduleEvent(EVENT_SHADOWSTRIKE, 30000);
@@ -227,17 +226,9 @@ public:
 					DoScriptText(EMOTE_SPIKE, me, target);
 					break;
 				case NPC_SCARAB:
-					if (m_uiStage != 2)
-					{
-						summoned->SetReactState(REACT_PASSIVE);
-						summoned->GetMotionMaster()->MoveRandom(5.0f);
-					}
-					else
-					{
-						summoned->SetReactState(REACT_AGGRESSIVE);
-						summoned->SetInCombatWithZone();
-						summoned->AddThreat(target, 20000.0f);
-					}
+					summoned->SetReactState(REACT_AGGRESSIVE);
+					summoned->SetInCombatWithZone();
+					summoned->AddThreat(target, 20000.0f);
 					break;
 			}
 			Summons.Summon(summoned);
@@ -290,20 +281,6 @@ public:
 			
 			while (uint32 eventId = _events.ExecuteEvent()) {
 				switch (eventId) {
-					case EVENT_SUMMON_SCARAB:
-					{
-						std::list<uint64>::iterator ite = BurrowGUIDs.begin();
-						std::advance(ite, urand(0, BurrowGUIDs.size() - 1));
-
-						if (Creature* pBurrow = Unit::GetCreature(*me, *ite))
-							me->SummonCreature(NPC_SCARAB, 	pBurrow->GetPositionX()+5.0f-float(rand_norm())*10.0f, 
-																				pBurrow->GetPositionY()+5.0f-float(rand_norm())*10.0f, 
-																				pBurrow->GetPositionZ(), 
-																				pBurrow->GetOrientation(), 
-																				TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000);
-						_events.ScheduleEvent(EVENT_SUMMON_SCARAB, 4000);
-						break;
-					}
 					case EVENT_SUMMON_SPHERE:
 					{
 						for (uint8 i = 0; i < 6; i++)
@@ -375,18 +352,34 @@ public:
 						DoScriptText(SAY_BURROWER, me);
 						EntryCheckPredicate pred(NPC_SCARAB);
 						Summons.DoAction(ACTION_ATTAAAAAACK, pred);
+						_events.ScheduleEvent(EVENT_SUMMON_SCARAB, 3000);
 						_events.ScheduleEvent(EVENT_SUMMON_SPIKE, 2000);
 						m_uiStage = 2;
 						break;
 					}
 					case 2:
 						switch (eventId) {
+							case EVENT_SUMMON_SCARAB:
+							{
+								std::list<uint64>::iterator ite = BurrowGUIDs.begin();
+								std::advance(ite, urand(0, BurrowGUIDs.size() - 1));
+
+								if (Creature* pBurrow = Unit::GetCreature(*me, *ite))
+									me->SummonCreature(NPC_SCARAB, 	pBurrow->GetPositionX()+5.0f-float(rand_norm())*10.0f, 
+																						pBurrow->GetPositionY()+5.0f-float(rand_norm())*10.0f, 
+																						pBurrow->GetPositionZ(), 
+																						pBurrow->GetOrientation(), 
+																						TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000);
+								_events.ScheduleEvent(EVENT_SUMMON_SCARAB, 3000);
+								break;
+							}
 							case EVENT_SUMMON_SPIKE:
 								DoCast(SPELL_SPIKE_CALL);
 								_events.ScheduleEvent(EVENT_SUMMON_SPIKE, 60000);
 							break;
 							case EVENT_SUBMERGE:
-								 m_uiStage = 3;
+								m_uiStage = 3;
+								_events.CancelEvent(EVENT_SUMMON_SCARAB);
 								_events.CancelEvent(EVENT_SUMMON_SPIKE);
 								_events.ScheduleEvent(EVENT_SUBMERGE, 80000);
 							break;

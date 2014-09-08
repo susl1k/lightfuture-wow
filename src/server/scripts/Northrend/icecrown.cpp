@@ -1816,9 +1816,9 @@ class npc_chillmaw : public CreatureScript
 public:
     npc_chillmaw() : CreatureScript("npc_chillmaw") { }
 
-    struct npc_chillmawAI : public Scripted_LandingAI
+    struct npc_chillmawAI : public ScriptedAI
     {
-        npc_chillmawAI(Creature* creature) : Scripted_LandingAI(creature), summons(creature) { }
+        npc_chillmawAI(Creature* creature) : ScriptedAI(creature), summons(creature) { }
 		
 		SummonList summons;
 		
@@ -1830,7 +1830,12 @@ public:
 
         void Reset()
         {
-			Scripted_LandingAI::Reset();
+			me->SetCanFly(true);
+			me->SetDisableGravity(true);
+			me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+			if (me->GetWaypointPath())
+				me->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+
 			frostBreathTimer = urand(10000, 11000);
 			winged = false;
 			dropped = 0;
@@ -1838,7 +1843,23 @@ public:
 			timeBombTimer = urand(13000, 15000)/(3-dropped);
 			summons.DespawnAll();
         }
-	
+		
+		void EnterCombat(Unit* who) override
+		{
+			me->GetMotionMaster()->Clear();
+			me->GetMotionMaster()->MoveCharge(who->GetPositionX(), who->GetPositionY(), who->GetPositionZ());
+		}
+
+		void MovementInform(uint32 type, uint32 point) override
+		{
+			if (type == POINT_MOTION_TYPE && point == EVENT_CHARGE)
+			{
+				me->SetCanFly(false);
+				me->SetDisableGravity(false);
+				me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+			}
+		}
+
 		void JustSummoned(Creature* summon)
 		{
 			if (summon->GetEntry() == 2000140)
@@ -1847,8 +1868,8 @@ public:
 			if (!me->isInCombat())
 				return;
 			
-			summon->SetInCombatWith(me->getVictim());
-			me->getVictim()->SetInCombatWith(summon);
+			summon->SetInCombatState(false, me->getVictim());
+			me->getVictim()->SetInCombatState(false, summon);
 			
 			summon->AddThreat(me->getVictim(), 1.0f);
 			me->getVictim()->AddThreat(summon, 1.0f);

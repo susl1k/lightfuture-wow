@@ -203,7 +203,7 @@ public:
 				m_instance->SetData(TYPE_NORTHREND_BEASTS, GORMOK_DONE);
 			Creature* combat = me->SummonCreature(2000090, ToCCommonLoc[1].GetPositionX(), ToCCommonLoc[1].GetPositionY(), ToCCommonLoc[1].GetPositionZ());
 			combat->SetInCombatWithZone();
-			me->DespawnOrUnsummon();
+			me->DespawnOrUnsummon(5000);
 		}
 
 		void JustReachedHome()
@@ -226,7 +226,7 @@ public:
 		
 		void JustSummoned(Creature* summon)
 		{
-			Unit* target=SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true);
+			Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 1, 0.0f, true);
 				
 			summon->AI()->AttackStart(target);
 			Summons.Summon(summon);
@@ -309,38 +309,24 @@ public:
 			_events.ScheduleEvent(EVENT_SNOBOLD_BOMB, 15000);
 			_events.ScheduleEvent(EVENT_SNOBOLD_BATTER, 5000);
 			_events.ScheduleEvent(EVENT_SNOBOLD_CRACK, 25000);
-			m_uiTargetGUID=0;
+			m_uiTargetGUID = 0;
 			me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_NOT_SELECTABLE);
-		}
-		
-		void EnterCombat(Unit* who)
-		{
-			m_uiTargetGUID=who->GetGUID();
-			me->GetMotionMaster()->MoveJump(who->GetPositionX(), who->GetPositionY(), who->GetPositionZ(), 10.0f, 20.0f);
-			me->AddThreat(who, 500000.0f);
 		}
 		
 		void DamageTaken(Unit* pDoneBy, uint32 &uiDamage)
 		{
-			if (pDoneBy->GetGUID()==m_uiTargetGUID)
+			if (pDoneBy->GetGUID() == m_uiTargetGUID)
 				uiDamage = 0;
-		}
-		
-		void EnterEvadeMode()
-		{
-			ScriptedAI::EnterEvadeMode();
 		}
 		
 		void JustDied(Unit* /*killer*/)
 		{
-			_events.Reset();
 			if (m_instance)
 				m_instance->SetData(DATA_SNOBOLD_COUNT, DECREASE);
 		}
 
 		void UpdateAI(const uint32 uiDiff)
 		{
-		
 			if (!UpdateVictim())
 				return;
 			
@@ -349,32 +335,39 @@ public:
 			if (me->HasUnitState(UNIT_STATE_CASTING))
 				return;
 			
-			if (Unit* target=Unit::GetPlayer(*me, m_uiTargetGUID))
-				if (!target->isAlive())
+			Unit* target = Unit::GetPlayer(*me, m_uiTargetGUID);
+			if (!target || !target->isAlive())
+			{
+				me->SetInCombatWithZone();
+				if (target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true))
 				{
-					target = SelectTarget(SELECT_TARGET_RANDOM, 0, 0.0f, true);
-					m_uiTargetGUID=target->GetGUID();
-					me->AddThreat(target, 500000.0f);
-					me->GetMotionMaster()->MoveJump(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 15.0f, 15.0f);
+					m_uiTargetGUID = target->GetGUID();
+					me->TauntApply(target);
+					me->GetMotionMaster()->MoveJump(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 15.0f, 15.0f); 
 				}
+			}
 			
-			while (uint32 eventId = _events.ExecuteEvent()) {
-				switch (eventId) {
+			while (uint32 eventId = _events.ExecuteEvent())
+			{
+				switch (eventId)
+				{
 					case EVENT_SNOBOLD_BOMB:
-						if (Unit* target2 = SelectTarget(SELECT_TARGET_RANDOM)) 
+						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM)) 
 						{
-							DoCast(target2, SPELL_FIRE_BOMB);
-							me->SummonCreature(NPC_SNOBOLD_FIRE, target2->GetPositionX(), target2->GetPositionY(), target2->GetPositionZ(), target2->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 60000);
+							DoCast(target, SPELL_FIRE_BOMB);
+							Creature* fire = me->SummonCreature(NPC_SNOBOLD_FIRE, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 60000);
+							fire->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
+							fire->CastSpell(fire, SPELL_FIRE_BOMB_DOT);
 						}
 						_events.ScheduleEvent(EVENT_SNOBOLD_BOMB, 15000);
 					break;
 					case EVENT_SNOBOLD_BATTER:
-						if (Unit* target=Unit::GetPlayer(*me, m_uiTargetGUID))
+						if (Unit* target = Unit::GetPlayer(*me, m_uiTargetGUID))
 							DoCast(target, SPELL_BATTER);
 						_events.ScheduleEvent(EVENT_SNOBOLD_BATTER, 5000);
 					break;
 					case EVENT_SNOBOLD_CRACK:
-						if (Unit* target=Unit::GetPlayer(*me, m_uiTargetGUID))
+						if (Unit* target = Unit::GetPlayer(*me, m_uiTargetGUID))
 							DoCast(target, SPELL_HEAD_CRACK);
 						_events.ScheduleEvent(EVENT_SNOBOLD_CRACK, 25000);
 					break;
@@ -385,37 +378,6 @@ public:
 		}
 	};
 
-};
-
-class mob_snobold_fire : public CreatureScript
-{
-public:
-	mob_snobold_fire() : CreatureScript("mob_snobold_fire") { }
-	
-	CreatureAI* GetAI(Creature* creature) const
-	{
-		return new mob_snobold_fireAI(creature);
-	}
-	
-	struct mob_snobold_fireAI : public Scripted_NoMovementAI
-	{
-		mob_snobold_fireAI(Creature* creature) : Scripted_NoMovementAI(creature)
-		{
-			Reset();
-		}
-		
-		void Reset()
-		{
-			me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
-			me->SetInCombatWithZone();
-			DoCast(me, SPELL_FIRE_BOMB_DOT);
-		}
-		
-		void UpdateAI(const uint32 uiDiff)
-		{
-			UpdateVictim();
-		}
-	};
 };
 
 struct boss_jormungarAI : public ScriptedAI
@@ -1126,7 +1088,6 @@ void AddSC_boss_northrend_beasts()
 {
 	new boss_gormok();
 	new mob_snobold_vassal();
-	new mob_snobold_fire();
 	new boss_acidmaw();
 	new boss_dreadscale();
 	new mob_slime_pool();

@@ -463,8 +463,27 @@ class boss_blood_queen_lana_thel : public CreatureScript
 			
 			void DamageDealt(Unit* target, int32 const damage, DamageEffectType damageType)
 			{
-				if (target==me->getVictim())
-					me->DealDamage(_offtank, damage, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL);
+				if (target == me->getVictim())
+				{
+					if (!_offtank)
+						return;
+
+					uint32 damageCalc = uint32(damage);
+					uint32 absorb = 0;
+					uint32 resist = 0;
+
+					me->CalcAbsorbResist(target, SPELL_SCHOOL_MASK_NORMAL, SPELL_DIRECT_DAMAGE, damageCalc, &absorb, &resist);
+
+					if (damageCalc <= absorb + resist)
+						return;
+
+					damageCalc -= absorb + resist;
+
+					me->DealDamageMods(target, damageCalc, &absorb);
+					me->DealDamage(_offtank, damageCalc, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL);
+
+					me->SendAttackStateUpdate(HITINFO_AFFECTS_VICTIM, target, 1, SPELL_SCHOOL_MASK_NORMAL, damageCalc, absorb, resist, VICTIMSTATE_HIT, 0);
+				}
 			}
 			
 			bool WasVampire(uint64 guid)
