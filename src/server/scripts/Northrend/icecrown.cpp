@@ -1911,6 +1911,7 @@ public:
 						}
 					me->SummonCreature(NPC_CULTIST_BOMBARDIER, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 3000);
 					dropped++;
+					return;
 				}
 				
 				if (dynamiteTimer <= uiDiff)

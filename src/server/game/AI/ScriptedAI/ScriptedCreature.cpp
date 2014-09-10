@@ -654,36 +654,57 @@ void WorldBossAI::UpdateAI(uint32 const diff)
     DoMeleeAttackIfReady();
 }
 
-void Scripted_LandingAI::EnterCombat(Unit* attacker)
+void LandingAI::_EnterCombat(Unit* attacker)
 {
 	me->GetMotionMaster()->Clear();
-	me->GetMotionMaster()->MoveCharge(attacker->GetPositionX(), attacker->GetPositionY(), attacker->GetPositionZ() + 4.0f, me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
+	sLog->outError("NPC jde na Z: %f", me->GetMap()->GetHeight(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ()) + landingAnim ? 4.0f : 0.0f);
+	me->GetMotionMaster()->MoveCharge(
+		me->GetPositionX(),
+		me->GetPositionY(),
+		me->GetMap()->GetHeight(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ()) + landingAnim ? 4.0f : 0.0f,
+		me->GetSpeed(MOVE_RUN),
+		LANDING_AI_POINT_LANDING);
 }
 
-void Scripted_LandingAI::MovementInform(uint32 type, uint32 point)
+void LandingAI::_MovementInform(uint32 type, uint32 point)
 {
-	if (point == EVENT_CHARGE)
+	if (point == LANDING_AI_POINT_LANDING)
 	{
-		if (type == POINT_MOTION_TYPE)
+		if (landingAnim && type == POINT_MOTION_TYPE)
 		{
-			me->m_Events.AddEvent(new Scripted_LandingAI_LandEvent(*me, EVENT_CHARGE), me->m_Events.CalculateTime(10));
+			me->m_Events.AddEvent(new LandingAI_LandEvent(*me), me->m_Events.CalculateTime(10));
 		}
-		else if (EFFECT_MOTION_TYPE)
+		else if (!landingAnim || EFFECT_MOTION_TYPE)
 		{
-			me->SetCanFly(false);
-			me->SetDisableGravity(false);
-			me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+			ActivateFlying(false);
 		}
 	}
 }
 
-void Scripted_LandingAI::Reset()
+void LandingAI::_Reset()
 {
-	me->SetCanFly(true);
-	me->SetDisableGravity(true);
-	me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+	ActivateFlying(true);
 	if (me->GetWaypointPath())
 		me->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+}
+
+void LandingAI::ActivateFlying(bool on)
+{
+	me->SetCanFly(on);
+	me->SetDisableGravity(on);
+	if (on)
+		me->SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+	else
+		me->RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_ALWAYS_STAND | UNIT_BYTE1_FLAG_HOVER);
+}
+
+bool LandingAI::LandingAI_LandEvent::Execute(uint64 /*eventTime*/, uint32 /*updateTime*/)
+{
+	Position pos;
+	sLog->outError("NPC jde na Z (land): %f", _owner.GetPositionZ() - 4.0f);
+	pos.Relocate(_owner.GetPositionX(), _owner.GetPositionY(), _owner.GetPositionZ() - 4.0f);
+	_owner.GetMotionMaster()->MoveLand(LANDING_AI_POINT_LANDING, pos, 4.0f);
+	return true;
 }
 
 // SD2 grid searchers.

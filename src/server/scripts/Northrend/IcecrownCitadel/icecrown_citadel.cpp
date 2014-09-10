@@ -2058,25 +2058,28 @@ class npc_nerubar_broodkeeper : public CreatureScript
 public:
 	npc_nerubar_broodkeeper() : CreatureScript("npc_nerubar_broodkeeper") { }
 
-	struct npc_nerubar_broodkeeperAI : public Scripted_LandingAI
+	struct npc_nerubar_broodkeeperAI : public LandingAI
 	{
-		npc_nerubar_broodkeeperAI(Creature* creature) : Scripted_LandingAI(creature)
+		npc_nerubar_broodkeeperAI(Creature* creature) : LandingAI(creature)
 		{
 				
 		}
 
 		EventMap _events;
-		
-		void EnterCombat(Unit* attacker)
+
+		void Reset()
 		{
 			_events.Reset();
-			_events.ScheduleEvent(EVENT_CRYPT_SCARABS, urand(5000, 7500) + 6000);
-			_events.ScheduleEvent(EVENT_DARK_MENDING, urand(7500, 10000) + 6000);
-			_events.ScheduleEvent(EVENT_WEB_TRAP, urand(2500, 5000) + 6000);
-			me->GetMotionMaster()->MoveCharge(me->GetPositionX(),
-				me->GetPositionY(),
-				me->GetMap()->GetHeight(me->GetPositionX(), me->GetPositionY(), me->GetPositionZ()) + 4.0f,
-				me->GetSpeed(MOVE_RUN), EVENT_CHARGE);
+			_events.ScheduleEvent(EVENT_CRYPT_SCARABS, urand(5000, 7500) + 8000);
+			_events.ScheduleEvent(EVENT_DARK_MENDING, urand(7500, 10000) + 8000);
+			_events.ScheduleEvent(EVENT_WEB_TRAP, urand(2500, 5000) + 8000);
+		}
+
+		void MovementInform(uint32 type, uint32 point)
+		{
+			if (type == EFFECT_MOTION_TYPE && point == LANDING_AI_POINT_LANDING)
+				me->SetHomePosition(*me);
+			_MovementInform(type, point);
 		}
 
 		void MoveInLineOfSight(Unit* who)
@@ -2290,14 +2293,24 @@ class npc_plagueworks : public CreatureScript
 				switch (eventId)
 				{
 					case EVENT_SEVERED_ESSENCE:
-						leapGUID = 0;
-						if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f))
+					{
+						const Map::PlayerList &list = me->GetMap()->GetPlayers();
+						for (Map::PlayerList::const_iterator i = list.begin(); i != list.end(); ++i)
 						{
-							leapGUID = target->GetGUID();
-							DoCast(target, SPELL_SEVERED_ESSENCE);
+							if (i->getSource()->isGameMaster())
+								return;
+
+							if (!i->getSource()->isAlive())
+								return;
+
+							if (Creature* summon = me->SummonCreature(NPC_TRASH_SEVERED_ESSENCE, *i->getSource(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 1000))
+							{
+								summon->AI()->SetGUID(i->getSource()->GetGUID());
+								DoZoneInCombat(summon);
+							}
 						}
-						_events.ScheduleEvent(EVENT_SEVERED_ESSENCE, 15000);
-					break;
+						break;
+					}
 					case EVENT_TRASH_CLEAVE:
 						DoCastVictim(SPELL_TRASH_CLEAVE);
 						_events.ScheduleEvent(EVENT_TRASH_CLEAVE, 5000);
@@ -2425,7 +2438,7 @@ class npc_plagueworks : public CreatureScript
 	
 		CreatureAI* GetAI(Creature* creature) const
 		{
-		return new npc_plagueworksAI(creature);
+			return new npc_plagueworksAI(creature);
 		}
 };
 
@@ -2486,17 +2499,6 @@ class npc_crimson_halls : public CreatureScript
 						_events.ScheduleEvent(EVENT_SHADOWSTEP, 500);
 					break;
 				}
-			}
-			
-			void DamageDealt(Unit* target, uint32& damage, DamageEffectType /*damageType*/)
-			{
-				/*if (target->HasAura(SPELL_BLOOD_MIRROR))
-					if (uint64 guid = (target->GetGUID() == mirrorSourceGUID ? mirrorTargetGUID : 0))
-					{
-						Unit* target2 = Unit::GetUnit(*me, guid);
-						if (target2->isAlive())
-							me->DealDamage(target2, damage/2);
-					}*/
 			}
 			
 			void UpdateAI(const uint32 uiDiff)

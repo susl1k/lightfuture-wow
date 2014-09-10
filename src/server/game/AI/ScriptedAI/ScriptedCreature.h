@@ -357,35 +357,43 @@ class WorldBossAI : public ScriptedAI
         SummonList summons;
 };
 
-struct Scripted_LandingAI : public ScriptedAI
+enum LandingAI_Points
 {
-	class Scripted_LandingAI_LandEvent : public BasicEvent
+	LANDING_AI_POINT_LANDING = 1100,
+};
+
+struct LandingAI : public ScriptedAI
+{
+public:
+	LandingAI(Creature* creature, bool withLandingAnim = true) : ScriptedAI(creature), landingAnim(withLandingAnim) { }
+    virtual ~LandingAI() { }
+	
+    void EnterCombat(Unit* who) override { _EnterCombat(who); }
+	
+    void MovementInform(uint32 type, uint32 point) override { _MovementInform(type, point); }
+	
+    void Reset() override { _Reset(); }
+
+protected:
+	void _EnterCombat(Unit* who);
+	void _MovementInform(uint32 type, uint32 point);
+	void _Reset();
+
+	void ActivateFlying(bool on);
+
+	bool landingAnim;
+
+private:
+	class LandingAI_LandEvent : public BasicEvent
 	{
 		public:
-			Scripted_LandingAI_LandEvent(Creature& owner, uint32 point) : _owner(owner), _point(point) { }
+			LandingAI_LandEvent(Creature& owner) : _owner(owner) { }
 
-			bool Execute(uint64 /*eventTime*/, uint32 /*updateTime*/)
-			{
-				Position pos;
-				float z = _owner.GetMap()->GetHeight(_owner.GetPositionX(), _owner.GetPositionY(), _owner.GetPositionZ());
-				pos.Relocate(_owner.GetPositionX(), _owner.GetPositionY(), z);
-				_owner.GetMotionMaster()->MoveLand(_point, pos, 4.0f);
-				return true;
-			}
+			bool Execute(uint64 /*eventTime*/, uint32 /*updateTime*/) override;
 
 		private:
 			Creature& _owner;
-			uint32 _point;
 	};
-
-    Scripted_LandingAI(Creature* creature) : ScriptedAI(creature) { }
-    virtual ~Scripted_LandingAI() { }
-
-	void EnterCombat(Unit* attacker) override;
-
-	void MovementInform(uint32 type, uint32 point) override;
-
-	void Reset() override;
 };
 
 // SD2 grid searchers.

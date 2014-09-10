@@ -1303,13 +1303,13 @@ class npc_stormpeak_wyrm : public CreatureScript
 public:
     npc_stormpeak_wyrm() : CreatureScript("npc_stormpeak_wyrm") { }
 
-    struct npc_stormpeak_wyrmAI : public Scripted_LandingAI
+    struct npc_stormpeak_wyrmAI : public LandingAI
     {
-        npc_stormpeak_wyrmAI(Creature* creature) : Scripted_LandingAI(creature) { }
+        npc_stormpeak_wyrmAI(Creature* creature) : LandingAI(creature) { }
 
 		void Reset()
 		{
-			Scripted_LandingAI::Reset();
+			_Reset();
 			spellTimer = urand(5000, 6000);
 		}
 
